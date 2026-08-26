@@ -25,5 +25,6 @@ CROSS-CUTTING RULES (apply to every task, every part):
 4. Money-touching endpoints (Part 6) must use Prisma $transaction() — never a partial write.
 5. Do not invent business rules not in the spec (e.g. payment due-date formulas, tax logic) — if a task needs a decision the spec doesn't make, stop and ask rather than guessing.
 6. Match Sembark's documented conventions exactly where the spec cites one (e.g. bulk-import cell conventions in Part 3, FOC handling in Part 4) — these aren't arbitrary, they're what the spec's source research found in Sembark's real product.
+7. Keep `docs/tutorial/` updated as each build phase and task proceeds, maintaining step-wise tutorials, architecture explanations, and shortcuts for vibe coders.
 
 WHEN IN DOUBT: prefer the simpler, more "minimalistic complexity" implementation described as v1.0 scope in each Part over a more elaborate one — features explicitly marked "stretch" or "Phase 3" in PRD Part 0 should not be built early even if they'd be easy to add while you're in the same file.
