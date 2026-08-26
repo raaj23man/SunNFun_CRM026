@@ -14,10 +14,11 @@ This tutorial is specially crafted for **semi-technical vibe coders**, founders,
 | **[01. Step 1 — Project Initialization & Infrastructure](./01-project-initialization.md)** | Full walkthrough of how the foundation was built from scratch. | Understand every agent action & decision |
 | **[02. Understanding the Tech Stack & Architecture](./02-understanding-the-tech-stack.md)** | Plain-English breakdown of Next.js 14, Tailwind, Shadcn, Prisma, & CI/CD. | Master the "Why" and the system logic |
 | **[03. Antigravity Agent Mechanics & Best Practices](./03-antigravity-agent-guide.md)** | How planning mode, artifacts, rules, and subagents work. | Learn how to guide the AI effectively |
-| *[04. Phase 0 — Organization, Users & Multi-Tenant Auth (Upcoming)]* | Will cover schema, Passkeys, 2FA, and RBAC. | Automatically added in Phase 0 |
-| *[05. Phase 1 — CRM Core, Master Data & Quoting Engine (Upcoming)]* | Will cover Trips, Hotels, Rate Resolution, & Itineraries. | Automatically added in Phase 1 |
-| *[06. Phase 2 — Bookings, Operations & Financial Ledger (Upcoming)]* | Will cover Service Vouchers, Payments, & Driver/Guide sheets. | Automatically added in Phase 2 |
-| *[07. Phase 3 — Automations & AI Agent Layer (Upcoming)]* | Will cover n8n webhooks, WhatsApp, & AI Quote Suggestions. | Automatically added in Phase 3 |
+| **[04. Phase 0 — Core Org, User & Multi-Tenant Schema](./04-phase0-org-and-multi-tenancy-schema.md)** | Schema design, Passkeys, 2FA enums, and auto-org-scoping extension. | Master multi-tenant database isolation |
+| *[05. Phase 0 — Auth Flows: Passkeys, 2FA & NextAuth (Upcoming)]* | Will cover NextAuth.js, @simplewebauthn, and TOTP. | Automatically added in Task B.2 |
+| *[06. Phase 1 — CRM Core, Master Data & Quoting Engine (Upcoming)]* | Will cover Trips, Hotels, Rate Resolution, & Itineraries. | Automatically added in Phase 1 |
+| *[07. Phase 2 — Bookings, Operations & Financial Ledger (Upcoming)]* | Will cover Service Vouchers, Payments, & Driver/Guide sheets. | Automatically added in Phase 2 |
+| *[08. Phase 3 — Automations & AI Agent Layer (Upcoming)]* | Will cover n8n webhooks, WhatsApp, & AI Quote Suggestions. | Automatically added in Phase 3 |
 
 ---
 

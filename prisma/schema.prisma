@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Prisma schema file for Travel CRM SaaS
+// Specification: TravelCRM_PRD_v2.md (Part 1 Section A & Part 8 Section A)
 
 generator client {
   provider = "prisma-client-js"
@@ -8,4 +8,193 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  SALES_HEAD
+  SALES_PERSON
+  OPERATIONS
+  RESERVATIONS
+  DATA_OPERATOR
+  ACCOUNTANT
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum ThemePreference {
+  LIGHT
+  DARK
+}
+
+// ==========================================
+// ORGANIZATION & BRAND CORE
+// ==========================================
+
+model Organization {
+  id                     String   @id @default(uuid())
+  company_name           String
+  brand_short_name       String
+  support_contact_number String
+  brand_color_theme      String?
+  trip_prefix            String   @default("SBC-")
+  logo_url               String?
+  header_banner_url      String?
+  footer_banner_url      String?
+  default_timezone       String   @default("Asia/Kathmandu")
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+
+  // Relations
+  brands            Brand[]
+  billing_addresses BillingAddress[]
+  bank_accounts     BankAccount[]
+  users             User[]
+  teams             Team[]
+
+  @@map("organizations")
+}
+
+model Brand {
+  id                   String   @id @default(uuid())
+  organization_id      String
+  name                 String
+  logo_url             String?
+  color_theme          String?
+  trip_prefix_override String?
+  is_default           Boolean  @default(false)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@index([organization_id])
+  @@map("brands")
+}
+
+model BillingAddress {
+  id              String   @id @default(uuid())
+  organization_id String
+  label           String
+  address_text    String
+  contact_number  String
+  billing_details String? // trade license, VAT/PAN/GST number
+  is_primary      Boolean  @default(false)
+  destination_id  String? // Nullable - Sembark supports destination-specific addresses
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@index([organization_id])
+  @@map("billing_addresses")
+}
+
+model BankAccount {
+  id              String   @id @default(uuid())
+  organization_id String
+  bank_name       String
+  account_number  String
+  swift_code      String?
+  currency        String   @default("USD")
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@index([organization_id])
+  @@map("bank_accounts")
+}
+
+// ==========================================
+// USER, TEAM & PERMISSIONS
+// ==========================================
+
+model User {
+  id                 String          @id @default(uuid())
+  organization_id    String
+  team_id            String?
+  first_name         String
+  last_name          String
+  email              String          @unique
+  password_hash      String?
+  phone_number       String?
+  role               Role            @default(SALES_PERSON)
+  status             UserStatus      @default(ACTIVE)
+  last_login         DateTime?
+  two_factor_enabled Boolean         @default(false)
+  two_factor_secret  String?
+  theme_preference   ThemePreference @default(LIGHT)
+  created_at         DateTime        @default(now())
+  updated_at         DateTime        @updatedAt
+
+  // Relations
+  organization         Organization             @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  team                 Team?                    @relation(fields: [team_id], references: [id], onDelete: SetNull)
+  permission_overrides UserPermissionOverride[]
+  passkeys             Passkey[]
+
+  @@index([organization_id])
+  @@index([team_id])
+  @@map("users")
+}
+
+model Team {
+  id                String   @id @default(uuid())
+  organization_id   String
+  name              String
+  destination_scope String[] @default([]) // Array of destination IDs
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  users        User[]
+
+  @@index([organization_id])
+  @@map("teams")
+}
+
+model UserPermissionOverride {
+  id             String   @id @default(uuid())
+  user_id        String
+  permission_key String
+  granted        Boolean  @default(true)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, permission_key])
+  @@index([user_id])
+  @@map("user_permission_overrides")
+}
+
+model Passkey {
+  id            String    @id @default(uuid())
+  user_id       String
+  credential_id String    @unique
+  public_key    String
+  counter       BigInt    @default(0)
+  device_label  String?
+  created_at    DateTime  @default(now())
+  last_used_at  DateTime?
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("passkeys")
 }
