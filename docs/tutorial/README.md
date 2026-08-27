@@ -15,7 +15,7 @@ This tutorial is specially crafted for **semi-technical vibe coders**, founders,
 | **[02. Understanding the Tech Stack & Architecture](./02-understanding-the-tech-stack.md)** | Plain-English breakdown of Next.js 14, Tailwind, Shadcn, Prisma, & CI/CD. | Master the "Why" and the system logic |
 | **[03. Antigravity Agent Mechanics & Best Practices](./03-antigravity-agent-guide.md)** | How planning mode, artifacts, rules, and subagents work. | Learn how to guide the AI effectively |
 | **[04. Phase 0 — Core Org, User & Multi-Tenant Schema](./04-phase0-org-and-multi-tenancy-schema.md)** | Schema design, Passkeys, 2FA enums, and auto-org-scoping extension. | Master multi-tenant database isolation |
-| *[05. Phase 0 — Auth Flows: Passkeys, 2FA & NextAuth (Upcoming)]* | Will cover NextAuth.js, @simplewebauthn, and TOTP. | Automatically added in Task B.2 |
+| **[05. Phase 0 — Auth Flows: Passkeys, 2FA & RBAC](./05-phase0-auth-flows-passkeys-and-rbac.md)** | NextAuth.js, @simplewebauthn, TOTP, RBAC middleware, Login UI. | Master the full auth & security layer |
 | *[06. Phase 1 — CRM Core, Master Data & Quoting Engine (Upcoming)]* | Will cover Trips, Hotels, Rate Resolution, & Itineraries. | Automatically added in Phase 1 |
 | *[07. Phase 2 — Bookings, Operations & Financial Ledger (Upcoming)]* | Will cover Service Vouchers, Payments, & Driver/Guide sheets. | Automatically added in Phase 2 |
 | *[08. Phase 3 — Automations & AI Agent Layer (Upcoming)]* | Will cover n8n webhooks, WhatsApp, & AI Quote Suggestions. | Automatically added in Phase 3 |

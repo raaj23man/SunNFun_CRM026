@@ -50,6 +50,7 @@ model Organization {
   header_banner_url      String?
   footer_banner_url      String?
   default_timezone       String   @default("Asia/Kathmandu")
+  force_2fa              Boolean  @default(false)
   created_at             DateTime @default(now())
   updated_at             DateTime @updatedAt
 
