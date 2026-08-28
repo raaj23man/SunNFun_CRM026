@@ -1,19 +1,21 @@
 import { AuditAction } from "@prisma/client";
 
+export type AuditEntityType =
+  | "Hotel"
+  | "RateSheet"
+  | "TransportService"
+  | "TravelActivity"
+  | "Quote"
+  | "Trip"
+  | "TripSource"
+  | "ServiceBooking"
+  | "FinancialTransaction"
+  | "UserPermissionOverride";
+
 export interface CreateAuditLogParams {
   organization_id: string;
   actor_user_id?: string | null;
-  entity_type:
-    | "Hotel"
-    | "RateSheet"
-    | "TransportService"
-    | "TravelActivity"
-    | "Quote"
-    | "Trip"
-    | "TripSource"
-    | "ServiceBooking"
-    | "FinancialTransaction"
-    | "UserPermissionOverride";
+  entity_type: AuditEntityType;
   entity_id: string;
   action: AuditAction;
   diff?: any;
