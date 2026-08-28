@@ -27,7 +27,8 @@ This tutorial is specially crafted for **semi-technical vibe coders**, founders,
 | **[14. Phase 2 — Financial Accounting, Atomic Ledgers & Revert Guards](./14-phase2-financial-ledgers-atomic-transactions-and-reverts.md)** | Client/Supplier ledgers, ACID $transaction logging, Locked-trip 403 guard on revert, Drop refund installment wiring. | Master financial accounting & transactions |
 | **[15. Phase 2 — Proforma Invoices, Paddle Webhooks & Profit Reports](./15-phase2-proforma-invoices-paddle-webhooks-and-reports.md)** | Proforma Invoices, Paddle payment links, Idempotent webhook replay handler, Profit report with pending-booking warning banner. | Master revenue operations & analytics |
 | **[16. Phase 3 — Integrations, Omnichannel Leads Webhook & Notify Engine](./16-phase3-integrations-leads-webhook-and-notify-engine.md)** | IntegrationConnection API-key auth, Rate limiting, Leads webhook, Notify trigger event dispatch, WhatsApp status listener. | Master external integrations & notification automation |
-| *[17. Phase 3 — AI Email Parsing, Itinerary Ingestion & Background Workers (Upcoming)]* | Will cover Claude/LLM structured email parsing, TripPlanRequest draft conversion & BullMQ workers. | Automatically added in next task |
+| **[17. Phase 3 — AI Email Parsing, Extraction & Confidence Branching](./17-phase3-ai-email-parsing-and-confidence-branching.md)** | Claude schema prompt extraction, High vs Low confidence branching, Trip creation blocker & raw email body preservation. | Master AI email ingestion & triage |
+| *[18. Phase 3 — Background Jobs, Sentry Monitoring & Production Hardening (Upcoming)]* | Will cover Upstash Redis background job queues, Sentry error monitoring & System Status page. | Automatically added in Part 8 |
 
 ---
 
