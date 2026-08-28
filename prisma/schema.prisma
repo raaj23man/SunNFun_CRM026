@@ -167,6 +167,7 @@ model Organization {
   notify_rules               NotifyRule[]
   webhook_delivery_logs      WebhookDeliveryLog[]
   email_threads              EmailThread[]
+  ai_action_logs             AIActionLog[]
 
   @@map("organizations")
 }
@@ -260,6 +261,8 @@ model User {
   assigned_tasks         TripTask[]               @relation("AssignedTasks")
   audit_logs             AuditLog[]
   logged_transactions    FinancialTransaction[]   @relation("LoggedFinancialTransactions")
+  ai_actions_initiated   AIActionLog[]            @relation("AIActorUser")
+  ai_actions_reviewed    AIActionLog[]            @relation("AIReviewerUser")
 
   @@index([organization_id])
   @@index([team_id])
@@ -1537,6 +1540,55 @@ model EmailThread {
   @@index([ai_parse_status])
   @@map("email_threads")
 }
+
+// ==========================================
+// AI & AGENTIC LAYER (PRD Part 9)
+// ==========================================
+
+enum AIActionType {
+  EMAIL_PARSE
+  QUOTE_DRAFT
+  FOLLOWUP_DRAFT
+  SUGGESTION_RANK
+}
+
+enum AIHumanDecision {
+  PENDING
+  APPROVED
+  EDITED
+  REJECTED
+  AUTO_APPROVED
+}
+
+model AIActionLog {
+  id                     String          @id @default(uuid())
+  organization_id        String
+  actor_user_id          String?
+  action_type            AIActionType
+  input_ref              String?
+  output_ref             String?
+  confidence_score       Float?
+  human_decision         AIHumanDecision @default(PENDING)
+  human_decision_user_id String?
+  human_decision_at      DateTime?
+  human_decision_diff    Json?
+  raw_input              Json?
+  raw_output             Json?
+  model_name             String?
+  created_at             DateTime        @default(now())
+  updated_at             DateTime        @updatedAt
+
+  // Relations
+  organization           Organization    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  actor_user             User?           @relation("AIActorUser", fields: [actor_user_id], references: [id], onDelete: SetNull)
+  human_decision_user    User?           @relation("AIReviewerUser", fields: [human_decision_user_id], references: [id], onDelete: SetNull)
+
+  @@index([organization_id])
+  @@index([action_type])
+  @@index([human_decision])
+  @@map("ai_action_logs")
+}
+
 
 
 

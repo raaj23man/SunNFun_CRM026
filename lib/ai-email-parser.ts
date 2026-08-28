@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { AIEmailParseStatus, PlanRequestStatus, PlanRequestSource } from "@prisma/client";
+import { AIEmailParseStatus, PlanRequestStatus, PlanRequestSource, AIActionType } from "@prisma/client";
+import { logAIAction } from "@/lib/ai-action-logger";
 
 export interface ExtractedEmailFields {
   guest_name: string | null;
@@ -234,9 +235,25 @@ export async function processEmailThreadParsing(
       });
     }
 
+    // Record AI Action in audit trail
+    const aiLog = await logAIAction(
+      {
+        organization_id: params.organization_id,
+        action_type: AIActionType.EMAIL_PARSE,
+        input_ref: emailThread.id,
+        output_ref: tripPlanRequest?.id || null,
+        confidence_score: extracted.confidence_score,
+        raw_input: { subject: params.subject, body_text: params.body_text, from_address: params.from_address },
+        raw_output: extracted,
+        model_name: "claude-3-5-sonnet-20241022",
+      },
+      dbClient
+    );
+
     return {
       success: true,
       email_thread_id: emailThread.id,
+      ai_action_log_id: aiLog?.id || null,
       ai_parse_status: emailThread.ai_parse_status,
       confidence_score: extracted.confidence_score,
       is_high_confidence: isHighConfidence,

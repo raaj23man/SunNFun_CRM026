@@ -29,7 +29,8 @@ This tutorial is specially crafted for **semi-technical vibe coders**, founders,
 | **[16. Phase 3 — Integrations, Omnichannel Leads Webhook & Notify Engine](./16-phase3-integrations-leads-webhook-and-notify-engine.md)** | IntegrationConnection API-key auth, Rate limiting, Leads webhook, Notify trigger event dispatch, WhatsApp status listener. | Master external integrations & notification automation |
 | **[17. Phase 3 — AI Email Parsing, Extraction & Confidence Branching](./17-phase3-ai-email-parsing-and-confidence-branching.md)** | Claude schema prompt extraction, High vs Low confidence branching, Trip creation blocker & raw email body preservation. | Master AI email ingestion & triage |
 | **[18. Phase 3 — Background Jobs, BullMQ/Redis Queues & Scheduled Crons](./18-phase3-background-jobs-bullmq-and-scheduled-crons.md)** | BullMQ async PDF queues, Bulk notification workers, 01:00 Kathmandu overdue scans & 1-year trip archival. | Master background workers & asynchronous processing |
-| *[19. Phase 4 — Sentry Monitoring, Audit Logs & System Status (Upcoming)]* | Will cover Sentry error monitoring, Part 8 AuditLog visualizer & System Status health checks. | Automatically added in Part 8 |
+| **[19. Phase 3 — AIActionLog, Quote Suggestions v2 & Human Decision Loops](./19-phase3-ai-action-logs-quote-suggestions-v2-and-human-decisions.md)** | AIActionLog audit schema, Semantic quote suggestion ranking, Filter fallback, Human decision feedback loops & auto-send guards. | Master AI telemetry & human-in-the-loop workflows |
+| *[20. Phase 4 — Sentry Monitoring, Audit Logs & System Health (Upcoming)]* | Will cover Sentry error monitoring, Part 8 AuditLog visualizer & System Status health checks. | Automatically added in Part 8 |
 
 ---
 
