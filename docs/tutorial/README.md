@@ -25,7 +25,8 @@ This tutorial is specially crafted for **semi-technical vibe coders**, founders,
 | **[12. Phase 2 — Operations, Service Bookings & Change vs. Drop](./12-phase2-part5-operations-dispatch-and-service-bookings.md)** | ServiceBooking, DispatchAssignment, Voucher schema, Change vs Drop chaining, Refund installment trigger, Enquiry drafts. | Master operational execution & bookings |
 | **[13. Phase 2 — Smart Calendars, Dispatch Share & Vouchers](./13-phase2-smart-calendars-dispatch-share-and-vouchers.md)** | High-performance 500+ booking matrix, Driver vs. Guest zero-price-leak dispatch, Payment due-date preview, Voucher editing. | Master operations calendar & dispatch |
 | **[14. Phase 2 — Financial Accounting, Atomic Ledgers & Revert Guards](./14-phase2-financial-ledgers-atomic-transactions-and-reverts.md)** | Client/Supplier ledgers, ACID $transaction logging, Locked-trip 403 guard on revert, Drop refund installment wiring. | Master financial accounting & transactions |
-| *[15. Phase 2 — Proforma Invoices, Reports & Paddle Payments (Upcoming)]* | Will cover Proforma Invoice generator, Profit reports with pending-booking banners & Paddle webhook. | Automatically added in next task |
+| **[15. Phase 2 — Proforma Invoices, Paddle Webhooks & Profit Reports](./15-phase2-proforma-invoices-paddle-webhooks-and-reports.md)** | Proforma Invoices, Paddle payment links, Idempotent webhook replay handler, Profit report with pending-booking warning banner. | Master revenue operations & analytics |
+| *[16. Phase 3 — Integrations, WhatsApp & AI Automation (Upcoming)]* | Will cover n8n integrations, WhatsApp automation & AI email parsing. | Automatically added in Part 7 |
 
 ---
 

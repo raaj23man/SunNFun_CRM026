@@ -14,6 +14,8 @@ import {
   X,
   Compass,
   Calendar,
+  CreditCard,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
@@ -100,6 +102,18 @@ export default function DashboardLayout({
       href: "/operations/calendar",
       icon: Calendar,
       roles: ["SUPER_ADMIN", "ADMIN", "SALES_HEAD", "OPERATIONS", "RESERVATIONS", "ACCOUNTANT", "DATA_OPERATOR"],
+    },
+    {
+      label: "Payments & Ledgers",
+      href: "/finance/payments",
+      icon: CreditCard,
+      roles: ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT", "SALES_HEAD", "SALES_PERSON"],
+    },
+    {
+      label: "Reports & Analytics",
+      href: "/reports",
+      icon: BarChart3,
+      roles: ["SUPER_ADMIN", "ADMIN", "SALES_HEAD", "ACCOUNTANT"],
     },
     {
       label: "Organization Settings",
