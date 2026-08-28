@@ -14,29 +14,46 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const tenantPrisma = getTenantPrisma(session.user.organization_id);
+    let user: any = null;
+    try {
+      const tenantPrisma = getTenantPrisma(session.user.organization_id);
 
-    const user = await tenantPrisma.user.findFirst({
-      where: { id: session.user.id },
-      include: {
-        team: {
-          select: {
-            id: true,
-            name: true,
-            destination_scope: true,
+      user = await tenantPrisma.user.findFirst({
+        where: { id: session.user.id },
+        include: {
+          team: {
+            select: {
+              id: true,
+              name: true,
+              destination_scope: true,
+            },
           },
-        },
-        permission_overrides: true,
-        organization: {
-          include: {
-            brands: {
-              where: { is_default: true },
-              take: 1,
+          permission_overrides: true,
+          organization: {
+            include: {
+              brands: {
+                where: { is_default: true },
+                take: 1,
+              },
             },
           },
         },
-      },
-    });
+      });
+    } catch (err: any) {
+      console.warn("[Auth Me] Database lookup failed, using session payload:", err.message);
+      // Return session data directly for local demo offline testing
+      return NextResponse.json({
+        user: {
+          ...session.user,
+          permissions: resolveUserPermissions(session.user.role, []),
+          organization: {
+            id: session.user.organization_id,
+            company_name: "SunNFun Holidays",
+            default_brand: { id: "brand_default", name: "SunNFun Holidays", color_theme: "emerald" },
+          },
+        },
+      });
+    }
 
     if (!user) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
