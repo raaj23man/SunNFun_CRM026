@@ -150,6 +150,7 @@ model Organization {
   quotes             Quote[]
   tax_types          TaxType[]
   quote_templates    QuoteTemplate[]
+  audit_logs         AuditLog[]
 
   @@map("organizations")
 }
@@ -241,6 +242,7 @@ model User {
   assigned_follow_ups    FollowUp[]               @relation("UserFollowUps")
   created_tasks          TripTask[]               @relation("CreatedTasks")
   assigned_tasks         TripTask[]               @relation("AssignedTasks")
+  audit_logs             AuditLog[]
 
   @@index([organization_id])
   @@index([team_id])
@@ -939,4 +941,36 @@ model QuoteTemplate {
   @@index([organization_id])
   @@map("quote_templates")
 }
+
+// ==========================================
+// PART 8: AUDIT LOGGING & GOVERNANCE
+// ==========================================
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  STATUS_CHANGE
+}
+
+model AuditLog {
+  id              String       @id @default(uuid())
+  organization_id String
+  actor_user_id   String?
+  entity_type     String       // e.g. "Hotel", "RateSheet", "TransportService", "Quote", "Trip", "FinancialTransaction"
+  entity_id       String
+  action          AuditAction
+  diff            Json?        // Before/after changed fields
+  created_at      DateTime     @default(now())
+
+  // Relations
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  actor_user      User?        @relation(fields: [actor_user_id], references: [id], onDelete: SetNull)
+
+  @@index([organization_id])
+  @@index([entity_type, entity_id])
+  @@index([created_at])
+  @@map("audit_logs")
+}
+
 
