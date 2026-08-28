@@ -5,15 +5,17 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
+  Kanban,
+  Inbox,
   Settings,
   LogOut,
   Shield,
-  Building,
   Menu,
   X,
   Compass,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/dashboard/NotificationBell";
 
 interface CurrentUser {
   id: string;
@@ -81,6 +83,18 @@ export default function DashboardLayout({
       roles: ["SUPER_ADMIN", "ADMIN", "SALES_HEAD", "SALES_PERSON", "OPERATIONS", "RESERVATIONS", "ACCOUNTANT", "DATA_OPERATOR"],
     },
     {
+      label: "Leads & Pipeline",
+      href: "/trips",
+      icon: Kanban,
+      roles: ["SUPER_ADMIN", "ADMIN", "SALES_HEAD", "SALES_PERSON", "OPERATIONS", "RESERVATIONS"],
+    },
+    {
+      label: "Trip Plan Requests",
+      href: "/trip-plan-requests",
+      icon: Inbox,
+      roles: ["SUPER_ADMIN", "ADMIN", "SALES_HEAD", "SALES_PERSON"],
+    },
+    {
       label: "Organization Settings",
       href: "/settings",
       icon: Settings,
@@ -97,22 +111,29 @@ export default function DashboardLayout({
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 border-r border-slate-200 bg-white p-4 justify-between shrink-0 shadow-sm">
         <div className="space-y-6">
-          {/* Logo */}
-          <div className="flex items-center gap-2.5 px-2 py-1">
-            <div className="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-base shadow-sm">
-              <Compass className="w-5 h-5 text-emerald-400" />
+          {/* Logo & Header */}
+          <div className="flex items-center justify-between px-2 py-1">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-base shadow-sm">
+                <Compass className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <div className="font-bold text-sm text-slate-900 tracking-tight">SunNFun CRM</div>
+                <div className="text-[10px] text-slate-400 font-medium">Travel SaaS Platform</div>
+              </div>
             </div>
-            <div>
-              <div className="font-bold text-sm text-slate-900 tracking-tight">SunNFun CRM</div>
-              <div className="text-[10px] text-slate-400 font-medium">Travel SaaS Platform</div>
-            </div>
+            <NotificationBell />
           </div>
 
           {/* Nav Items */}
           <nav className="space-y-1">
             {allowedNav.map((item) => {
               const Icon = item.icon;
-              const active = pathname === item.href || (item.href === "/dashboard" && pathname === "/");
+              const active =
+                pathname === item.href ||
+                (item.href === "/dashboard" && pathname === "/") ||
+                (item.href === "/trips" && pathname.startsWith("/trips/"));
+
               return (
                 <Link
                   key={item.href}
@@ -169,14 +190,17 @@ export default function DashboardLayout({
             <span className="font-bold text-sm text-slate-900">SunNFun CRM</span>
           </div>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="p-1 h-8 w-8"
-          >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </Button>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="p-1 h-8 w-8"
+            >
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </div>
         </header>
 
         {/* Mobile Dropdown Nav */}

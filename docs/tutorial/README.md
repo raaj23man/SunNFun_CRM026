@@ -19,8 +19,9 @@ This tutorial is specially crafted for **semi-technical vibe coders**, founders,
 | **[06. Phase 0 — Org Settings, Users & Global Hardening](./06-phase0-org-settings-and-user-management.md)** | Tabbed Settings UI, User Invite flow, Teams, Centralized Error Handling, Sentry. | Master organization admin & hardening |
 | **[07. Phase 1 — CRM Core Schema & Trip Lifecycle](./07-phase1-crm-core-schema-and-trip-lifecycle.md)** | Guest, TripPlanRequest, Trip, Tourist, FollowUp, Display IDs, Hold/Cancel/Drop state machine. | Master CRM core lead pipeline |
 | **[08. Phase 1 — Master Data, Rate Engine & Bulk Import](./08-phase1-master-data-rates-and-bulk-import.md)** | Hotel, RateSheet, Transport, Activity, Sembark cell conventions, Rate resolution, Hotel/Source Merges. | Master inventory & rate engine |
-| *[09. Phase 1 — Quoting Engine, Quote Options & PDF Generator (Upcoming)]* | Will cover Quote builder, Multi-Option quotes, line items, and Puppeteer PDF. | Automatically added in next task |
-| *[10. Phase 2 — Bookings, Operations & Financial Ledger (Upcoming)]* | Will cover Service Vouchers, Payments, & Driver/Guide sheets. | Automatically added in Phase 2 |
+| **[09. Phase 1 — Smart Dashboard, Lead Pipeline & Inbound Plan Requests](./09-phase1-smart-dashboard-lead-pipeline-and-requests.md)** | 4 Dashboard Cards, Fast 5-min Cached Pipeline, Click-to-dial, Inbound Leads, Guest Document Upload. | Master CRM frontend & lead workflow |
+| *[10. Phase 1 — Quoting Engine, Multi-Option Itineraries & Puppeteer PDF (Upcoming)]* | Will cover Quote builder, Multi-Option quotes, line items, and Puppeteer PDF. | Automatically added in next task |
+| *[11. Phase 2 — Operations, Vouchers & Financial Ledger (Upcoming)]* | Will cover Service Vouchers, Payments, & Driver/Guide sheets. | Automatically added in Phase 2 |
 
 ---
 
