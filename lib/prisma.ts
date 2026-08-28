@@ -38,6 +38,9 @@ export const TENANT_SCOPED_MODELS = [
   "TransportService",
   "TravelActivity",
   "Itinerary",
+  "Quote",
+  "TaxType",
+  "QuoteTemplate",
 ] as const;
 
 export type TenantScopedModel = (typeof TENANT_SCOPED_MODELS)[number];

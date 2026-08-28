@@ -147,6 +147,9 @@ model Organization {
   transport_services TransportService[]
   travel_activities  TravelActivity[]
   itineraries        Itinerary[]
+  quotes             Quote[]
+  tax_types          TaxType[]
+  quote_templates    QuoteTemplate[]
 
   @@map("organizations")
 }
@@ -412,6 +415,7 @@ model Trip {
   follow_ups            FollowUp[]
   tasks                 TripTask[]
   trip_plan_request     TripPlanRequest?
+  quotes                Quote[]
 
   @@unique([organization_id, sequence_number])
   @@index([organization_id])
@@ -716,3 +720,223 @@ model TripSource {
   @@index([organization_id])
   @@map("trip_sources")
 }
+
+// ==========================================
+// PART 4: QUOTATION ENGINE & ITINERARY BUILDER
+// ==========================================
+
+enum QuoteStatus {
+  DRAFT
+  SHARED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum PricingStrategy {
+  OVERALL
+  PER_PERSON
+  PER_COMPONENT
+  PER_COMPONENT_PER_PERSON
+}
+
+enum QuoteItemType {
+  HOTEL
+  TRANSPORT
+  ACTIVITY
+  FLIGHT
+  CUSTOM
+}
+
+enum MarkupType {
+  PERCENT
+  FLAT
+}
+
+enum TaxBasis {
+  COST_PLUS_MARKUP
+  MARKUP_ONLY
+}
+
+enum FlightTripType {
+  ONE_WAY
+  ROUND_TRIP
+  MULTI_CITY
+  CONNECTING
+}
+
+enum FlightEntryMethod {
+  API_SEARCH
+  MANUAL
+}
+
+model Quote {
+  id                         String          @id @default(uuid())
+  organization_id            String
+  trip_id                    String
+  version                    Int             @default(1)
+  status                     QuoteStatus     @default(DRAFT)
+  pricing_strategy           PricingStrategy @default(OVERALL)
+  total_cost_price           Decimal         @default(0) @db.Decimal(12, 2)
+  total_selling_price        Decimal         @default(0) @db.Decimal(12, 2)
+  currency                   String          @default("USD")
+  valid_until                DateTime?
+  is_multi_option            Boolean         @default(false)
+  hide_total_price           Boolean         @default(false)
+  include_itinerary          Boolean         @default(true)
+  remove_terms               Boolean         @default(false)
+  use_similar_hotel_wording  Boolean         @default(false)
+
+  // Overall pricing strategy fields
+  overall_markup_type        MarkupType?     @default(PERCENT)
+  overall_markup_value       Decimal?        @default(0) @db.Decimal(10, 2)
+  overall_tax_rate_id        String?
+
+  created_at                 DateTime        @default(now())
+  updated_at                 DateTime        @updatedAt
+
+  // Relations
+  organization               Organization    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  trip                       Trip            @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  overall_tax_rate           TaxType?        @relation("QuoteOverallTax", fields: [overall_tax_rate_id], references: [id], onDelete: SetNull)
+  options                    QuoteOption[]
+  flight_segments            FlightSegment[]
+
+  @@unique([trip_id, version])
+  @@index([organization_id])
+  @@index([trip_id])
+  @@index([status])
+  @@map("quotes")
+}
+
+model QuoteOption {
+  id                  String     @id @default(uuid())
+  quote_id            String
+  option_label        String     @default("Standard") // e.g. "Deluxe", "Luxury", "Premium"
+  is_default          Boolean    @default(true)
+  total_cost_price    Decimal    @default(0) @db.Decimal(12, 2)
+  total_selling_price Decimal    @default(0) @db.Decimal(12, 2)
+  created_at          DateTime   @default(now())
+  updated_at          DateTime   @updatedAt
+
+  // Relations
+  quote               Quote      @relation(fields: [quote_id], references: [id], onDelete: Cascade)
+  days                QuoteDay[]
+
+  @@index([quote_id])
+  @@map("quote_options")
+}
+
+model QuoteDay {
+  id              String       @id @default(uuid())
+  quote_option_id String
+  day_number      Int          @default(1)
+  title           String
+  description     String       @db.Text
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+
+  // Relations
+  quote_option    QuoteOption  @relation(fields: [quote_option_id], references: [id], onDelete: Cascade)
+  items           QuoteItem[]
+
+  @@index([quote_option_id])
+  @@map("quote_days")
+}
+
+model QuoteItem {
+  id              String         @id @default(uuid())
+  quote_day_id    String
+  item_type       QuoteItemType
+  inventory_id    String?        // Nullable FK to Hotel/Transport/Activity in master data
+  custom_name     String?        // Custom label if manual or freeform
+  cost_price      Decimal        @default(0) @db.Decimal(12, 2)
+  selling_price   Decimal        @default(0) @db.Decimal(12, 2)
+  is_foc          Boolean        @default(false) // Free-of-cost line (selling_price = 0, cost_price retained for margin)
+  markup_type     MarkupType?    // PERCENT or FLAT (for PER_COMPONENT*)
+  markup_value    Decimal?       @default(0) @db.Decimal(10, 2)
+  tax_basis       TaxBasis?      // COST_PLUS_MARKUP or MARKUP_ONLY
+  tax_rate_id     String?        // FK to TaxType
+  pickup_location String?
+  drop_location   String?
+  notes           String?        @db.Text
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+
+  // Relations
+  quote_day       QuoteDay       @relation(fields: [quote_day_id], references: [id], onDelete: Cascade)
+  tax_rate        TaxType?       @relation("ItemTaxRate", fields: [tax_rate_id], references: [id], onDelete: SetNull)
+
+  @@index([quote_day_id])
+  @@index([inventory_id])
+  @@index([tax_rate_id])
+  @@map("quote_items")
+}
+
+model FlightSegment {
+  id                  String            @id @default(uuid())
+  quote_id            String
+  trip_type           FlightTripType    @default(ONE_WAY)
+  entry_method        FlightEntryMethod @default(MANUAL)
+  airline             String
+  flight_number       String
+  origin_airport      String
+  destination_airport String
+  departure_time      DateTime
+  arrival_time        DateTime
+  travel_class        String            @default("ECONOMY")
+  baggage_allowance   String?
+  meal_type           String?
+  fare_type           String?
+  cost_price          Decimal?          @db.Decimal(12, 2)
+  selling_price       Decimal?          @db.Decimal(12, 2)
+  created_at          DateTime          @default(now())
+  updated_at          DateTime          @updatedAt
+
+  // Relations
+  quote               Quote             @relation(fields: [quote_id], references: [id], onDelete: Cascade)
+
+  @@index([quote_id])
+  @@map("flight_segments")
+}
+
+model TaxType {
+  id              String       @id @default(uuid())
+  organization_id String
+  name            String       // e.g. "GST 5%", "VAT 13%", "TCS 5%", "N/A"
+  rate_percent    Decimal      @db.Decimal(5, 2)
+  is_inclusive    Boolean      @default(false)
+  is_active       Boolean      @default(true)
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+
+  // Relations
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  quotes          Quote[]      @relation("QuoteOverallTax")
+  quote_items     QuoteItem[]  @relation("ItemTaxRate")
+
+  @@index([organization_id])
+  @@map("tax_types")
+}
+
+model QuoteTemplate {
+  id                   String       @id @default(uuid())
+  organization_id      String
+  name                 String
+  font_family          String       @default("Inter")
+  section_order        String[]     @default(["GREETING", "ITINERARY", "HOTELS", "FLIGHTS", "PRICING", "INCLUSIONS", "EXCLUSIONS", "TERMS"])
+  show_activity_timing Boolean      @default(true)
+  is_branded           Boolean      @default(true)
+  greeting_rich_text   String?      @db.Text
+  header_banner_url    String?
+  footer_banner_url    String?
+  created_at           DateTime     @default(now())
+  updated_at           DateTime     @updatedAt
+
+  // Relations
+  organization         Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@index([organization_id])
+  @@map("quote_templates")
+}
+

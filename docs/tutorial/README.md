@@ -20,8 +20,9 @@ This tutorial is specially crafted for **semi-technical vibe coders**, founders,
 | **[07. Phase 1 — CRM Core Schema & Trip Lifecycle](./07-phase1-crm-core-schema-and-trip-lifecycle.md)** | Guest, TripPlanRequest, Trip, Tourist, FollowUp, Display IDs, Hold/Cancel/Drop state machine. | Master CRM core lead pipeline |
 | **[08. Phase 1 — Master Data, Rate Engine & Bulk Import](./08-phase1-master-data-rates-and-bulk-import.md)** | Hotel, RateSheet, Transport, Activity, Sembark cell conventions, Rate resolution, Hotel/Source Merges. | Master inventory & rate engine |
 | **[09. Phase 1 — Smart Dashboard, Lead Pipeline & Inbound Plan Requests](./09-phase1-smart-dashboard-lead-pipeline-and-requests.md)** | 4 Dashboard Cards, Fast 5-min Cached Pipeline, Click-to-dial, Inbound Leads, Guest Document Upload. | Master CRM frontend & lead workflow |
-| *[10. Phase 1 — Quoting Engine, Multi-Option Itineraries & Puppeteer PDF (Upcoming)]* | Will cover Quote builder, Multi-Option quotes, line items, and Puppeteer PDF. | Automatically added in next task |
-| *[11. Phase 2 — Operations, Vouchers & Financial Ledger (Upcoming)]* | Will cover Service Vouchers, Payments, & Driver/Guide sheets. | Automatically added in Phase 2 |
+| **[10. Phase 1 — Quotation Schema & Pricing Strategies](./10-phase1-quotation-engine-and-pricing-strategies.md)** | Quote, QuoteOption, QuoteDay, QuoteItem, FlightSegment, TaxType, 4 Pricing Strategies pure engine, Flight validation. | Master quotation pricing & financial math |
+| *[11. Phase 1 — Quote Builder UI, Multi-Option Tiers & PDF Generator (Upcoming)]* | Will cover Quote builder form, Multi-Option tabs, and Puppeteer PDF generator. | Automatically added in next task |
+| *[12. Phase 2 — Operations, Vouchers & Financial Ledger (Upcoming)]* | Will cover Service Vouchers, Payments, & Driver/Guide sheets. | Automatically added in Phase 2 |
 
 ---
 
