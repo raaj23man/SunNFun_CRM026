@@ -3,6 +3,7 @@ import { z } from "zod";
 import { withAuthAndRbac } from "@/lib/rbac";
 import { PaymentMode } from "@prisma/client";
 import { logClientPaymentTransaction } from "@/lib/finance-service";
+import { emitNotifyEvent } from "@/lib/notify-service";
 
 const logClientPaymentSchema = z.object({
   trip_id: z.string().min(1, "Trip ID is required"),
@@ -38,6 +39,28 @@ export const POST = withAuthAndRbac(
         account_id: validated.account_id || undefined,
       });
     });
+
+    // Emit PAYMENT_RECEIVED Notify trigger event
+    try {
+      await emitNotifyEvent({
+        event: "PAYMENT_RECEIVED" as any,
+        organization_id: user.organization_id,
+        entity_type: "ClientLedger",
+        entity_id: result.ledger.id,
+        trip_id: validated.trip_id,
+        context: {
+          amount_paid: validated.amount,
+          currency: result.transaction.currency,
+          payment_mode: validated.payment_mode,
+          reference_number: validated.reference_number || null,
+          total_paid: Number(result.ledger.total_paid_amount),
+          total_billed: Number(result.ledger.total_billed_amount),
+          status: result.ledger.status,
+        },
+      });
+    } catch (e) {
+      console.warn("[Client Payment] Non-blocking notify emission error:", e);
+    }
 
     return NextResponse.json({
       success: true,

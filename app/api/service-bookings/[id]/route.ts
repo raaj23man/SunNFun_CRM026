@@ -3,6 +3,7 @@ import { z } from "zod";
 import { withAuthAndRbac } from "@/lib/rbac";
 import { writeAuditLog } from "@/lib/audit-log";
 import { ServiceBookingStatus } from "@prisma/client";
+import { triggerBookingStatusChange } from "@/lib/notify-service";
 
 const updateServiceBookingSchema = z.object({
   supplier_id: z.string().nullable().optional(),
@@ -114,6 +115,16 @@ export const PUT = withAuthAndRbac(
       action: "UPDATE",
       diff: { before: existing, after: updated },
     });
+
+    // Emit Notify trigger event if status changed
+    if (validated.status && validated.status !== existing.status) {
+      await triggerBookingStatusChange(
+        bookingId,
+        updated.status,
+        user.organization_id,
+        existing.trip_id
+      );
+    }
 
     return NextResponse.json({
       success: true,

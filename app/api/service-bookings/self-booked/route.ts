@@ -3,6 +3,7 @@ import { z } from "zod";
 import { withAuthAndRbac } from "@/lib/rbac";
 import { writeAuditLog } from "@/lib/audit-log";
 import { ServiceBookingStatus, QuoteItemType } from "@prisma/client";
+import { triggerBookingStatusChange } from "@/lib/notify-service";
 
 const selfBookedSchema = z.object({
   trip_id: z.string().min(1, "Trip ID is required"),
@@ -61,6 +62,14 @@ export const POST = withAuthAndRbac(
       action: "CREATE",
       diff: { action: "SELF_BOOKED_ENTRY", service_name: booking.service_name },
     });
+
+    // Emit Notify trigger event for BOOKING_CONFIRMED
+    await triggerBookingStatusChange(
+      booking.id,
+      ServiceBookingStatus.CONFIRMED,
+      user.organization_id,
+      validated.trip_id
+    );
 
     return NextResponse.json({
       success: true,

@@ -51,6 +51,10 @@ export const TENANT_SCOPED_MODELS = [
   "PaymentPreferenceRule",
   "ProformaInvoice",
   "PaymentGatewayTransaction",
+  "IntegrationConnection",
+  "NotifyRule",
+  "WebhookDeliveryLog",
+  "EmailThread",
 ] as const;
 
 export type TenantScopedModel = (typeof TENANT_SCOPED_MODELS)[number];

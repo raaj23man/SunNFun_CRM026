@@ -26,7 +26,8 @@ This tutorial is specially crafted for **semi-technical vibe coders**, founders,
 | **[13. Phase 2 — Smart Calendars, Dispatch Share & Vouchers](./13-phase2-smart-calendars-dispatch-share-and-vouchers.md)** | High-performance 500+ booking matrix, Driver vs. Guest zero-price-leak dispatch, Payment due-date preview, Voucher editing. | Master operations calendar & dispatch |
 | **[14. Phase 2 — Financial Accounting, Atomic Ledgers & Revert Guards](./14-phase2-financial-ledgers-atomic-transactions-and-reverts.md)** | Client/Supplier ledgers, ACID $transaction logging, Locked-trip 403 guard on revert, Drop refund installment wiring. | Master financial accounting & transactions |
 | **[15. Phase 2 — Proforma Invoices, Paddle Webhooks & Profit Reports](./15-phase2-proforma-invoices-paddle-webhooks-and-reports.md)** | Proforma Invoices, Paddle payment links, Idempotent webhook replay handler, Profit report with pending-booking warning banner. | Master revenue operations & analytics |
-| *[16. Phase 3 — Integrations, WhatsApp & AI Automation (Upcoming)]* | Will cover n8n integrations, WhatsApp automation & AI email parsing. | Automatically added in Part 7 |
+| **[16. Phase 3 — Integrations, Omnichannel Leads Webhook & Notify Engine](./16-phase3-integrations-leads-webhook-and-notify-engine.md)** | IntegrationConnection API-key auth, Rate limiting, Leads webhook, Notify trigger event dispatch, WhatsApp status listener. | Master external integrations & notification automation |
+| *[17. Phase 3 — AI Email Parsing, Itinerary Ingestion & Background Workers (Upcoming)]* | Will cover Claude/LLM structured email parsing, TripPlanRequest draft conversion & BullMQ workers. | Automatically added in next task |
 
 ---
 

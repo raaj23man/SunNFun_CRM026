@@ -53,6 +53,9 @@ enum PlanRequestSource {
   GOOGLE_ADS
   CHATBOT
   MANUAL
+  EMAIL_INBOX
+  GOOGLE_FORM
+  WIX
 }
 
 enum PlanRequestStatus {
@@ -160,6 +163,10 @@ model Organization {
   payment_preference_rules   PaymentPreferenceRule[]
   proforma_invoices          ProformaInvoice[]
   payment_gateway_trans      PaymentGatewayTransaction[]
+  integration_connections    IntegrationConnection[]
+  notify_rules               NotifyRule[]
+  webhook_delivery_logs      WebhookDeliveryLog[]
+  email_threads              EmailThread[]
 
   @@map("organizations")
 }
@@ -376,6 +383,7 @@ model TripPlanRequest {
   organization   Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   assigned_user  User?        @relation("AssignedPlanRequests", fields: [assigned_user_id], references: [id], onDelete: SetNull)
   converted_trip Trip?        @relation(fields: [converted_trip_id], references: [id], onDelete: SetNull)
+  email_threads  EmailThread[]
 
   @@index([organization_id])
   @@index([status])
@@ -435,6 +443,7 @@ model Trip {
   financial_transactions FinancialTransaction[]
   proforma_invoices     ProformaInvoice[]
   payment_gateway_trans PaymentGatewayTransaction[]
+  email_threads         EmailThread[]
 
   @@unique([organization_id, sequence_number])
   @@index([organization_id])
@@ -1384,6 +1393,151 @@ model PaymentGatewayTransaction {
   @@index([status])
   @@map("payment_gateway_transactions")
 }
+
+// ==========================================
+// PART 7: INTEGRATIONS, NOTIFY & AUTOMATION
+// ==========================================
+
+enum IntegrationType {
+  WEBSITE_FORM
+  META_ADS
+  GOOGLE_ADS
+  CHATBOT
+  EMAIL_INBOX
+  GOOGLE_FORM
+  WIX
+}
+
+enum NotifyTriggerEvent {
+  BOOKING_CONFIRMED
+  PAYMENT_DUE_REMINDER
+  PAYMENT_RECEIVED
+  TRIP_STARTING_TOMORROW
+  VOUCHER_GENERATED
+  FOLLOW_UP_DUE
+}
+
+enum NotifyChannel {
+  WHATSAPP
+  EMAIL
+}
+
+enum NotifyRecipientType {
+  GUEST
+  ASSIGNED_AGENT
+  SUPPLIER
+}
+
+enum WebhookDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum WebhookDeliveryStatus {
+  SUCCESS
+  FAILED
+  RETRYING
+}
+
+enum AIEmailParseStatus {
+  PENDING
+  PARSED
+  LOW_CONFIDENCE_NEEDS_REVIEW
+  FAILED
+}
+
+model IntegrationConnection {
+  id              String                 @id @default(uuid())
+  organization_id String
+  name            String                 @default("Default Integration")
+  type            IntegrationType        @default(WEBSITE_FORM)
+  api_key_hash    String                 @unique
+  config          Json?
+  is_active       Boolean                @default(true)
+  created_at      DateTime               @default(now())
+  updated_at      DateTime               @updatedAt
+
+  // Relations
+  organization    Organization           @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  delivery_logs   WebhookDeliveryLog[]
+
+  @@index([organization_id])
+  @@index([api_key_hash])
+  @@map("integration_connections")
+}
+
+model NotifyRule {
+  id              String              @id @default(uuid())
+  organization_id String
+  name            String?
+  trigger_event   NotifyTriggerEvent
+  channel         NotifyChannel       @default(WHATSAPP)
+  template_id     String              // Meta-approved WhatsApp template name
+  recipient_type  NotifyRecipientType @default(GUEST)
+  is_active       Boolean             @default(true)
+  config          Json?
+  created_at      DateTime            @default(now())
+  updated_at      DateTime            @updatedAt
+
+  // Relations
+  organization    Organization        @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@index([organization_id])
+  @@index([trigger_event])
+  @@map("notify_rules")
+}
+
+model WebhookDeliveryLog {
+  id                        String                 @id @default(uuid())
+  organization_id           String?
+  integration_connection_id String?
+  direction                 WebhookDirection       @default(INBOUND)
+  payload                   Json
+  status                    WebhookDeliveryStatus  @default(SUCCESS)
+  error_message             String?                @db.Text
+  response_code             Int?
+  attempted_at              DateTime               @default(now())
+
+  // Relations
+  organization              Organization?          @relation(fields: [organization_id], references: [id], onDelete: SetNull)
+  integration_connection    IntegrationConnection? @relation(fields: [integration_connection_id], references: [id], onDelete: SetNull)
+
+  @@index([organization_id])
+  @@index([integration_connection_id])
+  @@index([direction])
+  @@index([status])
+  @@index([attempted_at])
+  @@map("webhook_delivery_logs")
+}
+
+model EmailThread {
+  id                   String             @id @default(uuid())
+  organization_id      String
+  trip_plan_request_id String?
+  trip_id              String?
+  raw_message_id       String?
+  from_address         String
+  subject              String?
+  body_text            String             @db.Text
+  received_at          DateTime           @default(now())
+  ai_parse_status      AIEmailParseStatus @default(PENDING)
+  ai_extracted_fields  Json?
+  ai_confidence_score  Float?
+  created_at           DateTime           @default(now())
+  updated_at           DateTime           @updatedAt
+
+  // Relations
+  organization         Organization       @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  trip_plan_request    TripPlanRequest?   @relation(fields: [trip_plan_request_id], references: [id], onDelete: SetNull)
+  trip                 Trip?              @relation(fields: [trip_id], references: [id], onDelete: SetNull)
+
+  @@index([organization_id])
+  @@index([trip_plan_request_id])
+  @@index([trip_id])
+  @@index([ai_parse_status])
+  @@map("email_threads")
+}
+
 
 
 

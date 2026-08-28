@@ -13,6 +13,7 @@ import {
   Plus,
   CreditCard,
   Landmark,
+  Webhook,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +34,7 @@ import { SettingsErrorBoundary } from "@/components/settings/SettingsErrorBounda
 import { UsersTable, UserItem } from "@/components/settings/UsersTable";
 import { InviteMemberDialog } from "@/components/settings/InviteMemberDialog";
 import { TeamsPanel, TeamItem } from "@/components/settings/TeamsPanel";
+import { IntegrationsPanel } from "@/components/settings/IntegrationsPanel";
 import { UserStatus } from "@prisma/client";
 
 export default function OrganizationSettingsPage() {
@@ -239,6 +241,10 @@ export default function OrganizationSettingsPage() {
             <TabsTrigger value="currencies" className="flex items-center gap-2 text-xs font-semibold px-4 py-2">
               <Coins className="w-4 h-4" />
               Currencies (Preview)
+            </TabsTrigger>
+            <TabsTrigger value="integrations" className="flex items-center gap-2 text-xs font-semibold px-4 py-2">
+              <Webhook className="w-4 h-4" />
+              Integrations &amp; Notify (Part 7)
             </TabsTrigger>
           </TabsList>
 
@@ -708,6 +714,11 @@ export default function OrganizationSettingsPage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* TAB 4: INTEGRATIONS & NOTIFY AUTOMATION (PRD PART 7) */}
+          <TabsContent value="integrations" className="space-y-6">
+            <IntegrationsPanel />
           </TabsContent>
         </Tabs>
       </div>

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { withAuthAndRbac } from "@/lib/rbac";
 import { writeAuditLog } from "@/lib/audit-log";
 import { VoucherType, ServiceBookingStatus } from "@prisma/client";
+import { triggerBookingStatusChange } from "@/lib/notify-service";
 
 const voucherSchema = z.object({
   type: z.nativeEnum(VoucherType).default(VoucherType.HOTEL),
@@ -76,6 +77,14 @@ export const POST = withAuthAndRbac(
       action: "CREATE",
       diff: { voucher_code: voucherCode, type: validated.type },
     });
+
+    // Emit Notify trigger event for VOUCHER_GENERATED
+    await triggerBookingStatusChange(
+      serviceBookingId,
+      ServiceBookingStatus.VOUCHER_GENERATED,
+      user.organization_id,
+      booking.trip_id
+    );
 
     return NextResponse.json({
       success: true,
