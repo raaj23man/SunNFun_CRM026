@@ -1,5 +1,5 @@
 // Prisma schema file for Travel CRM SaaS
-// Specification: TravelCRM_PRD_v2.md (Part 1 Section A, Part 2 Section A, Part 3 Section A & Part 8 Section A)
+// Specification: TravelCRM_PRD_v2.md (Part 1, Part 2, Part 3 & Part 8)
 
 generator client {
   provider = "prisma-client-js"
@@ -11,7 +11,7 @@ datasource db {
 }
 
 // ==========================================
-// ENUMS (PRD Part 1 & Part 2)
+// ENUMS (PRD Part 1, 2 & 3)
 // ==========================================
 
 enum Role {
@@ -85,6 +85,32 @@ enum TripSourceType {
   REFERRAL
 }
 
+enum SupplierType {
+  HOTEL
+  TRANSPORT
+  ACTIVITY
+  DMC
+}
+
+enum HotelEntryMethod {
+  MANUAL
+  FILE_UPLOAD
+}
+
+enum OccupancyType {
+  SINGLE
+  DOUBLE
+  TRIPLE
+  EXTRA_BED
+  PER_UNIT
+}
+
+enum TransportBillingMetric {
+  PER_SERVICE
+  PER_KM
+  PER_DAY
+}
+
 // ==========================================
 // ORGANIZATION & BRAND CORE (PRD Part 1)
 // ==========================================
@@ -115,6 +141,12 @@ model Organization {
   trips              Trip[]
   destinations       TripDestination[]
   trip_sources       TripSource[]
+  suppliers          Supplier[]
+  hotels             Hotel[]
+  rate_sheets        RateSheet[]
+  transport_services TransportService[]
+  travel_activities  TravelActivity[]
+  itineraries        Itinerary[]
 
   @@map("organizations")
 }
@@ -359,8 +391,8 @@ model Trip {
   origin_city               String?
   trip_source_id            String?
   status                    TripStatus @default(NEW_QUERY)
-  is_locked                 Boolean    @default(false) // Sembark auto-locks past trips
-  is_archived               Boolean    @default(false) // Sembark auto-archives >1 yr
+  is_locked                 Boolean    @default(false)
+  is_archived               Boolean    @default(false)
   tags                      String[]   @default([])
   package_amount            Decimal?   @db.Decimal(12, 2)
   currency                  String?    @default("USD")
@@ -392,14 +424,14 @@ model Trip {
 }
 
 model Tourist {
-  id                         String   @id @default(uuid())
-  trip_id                    String
-  full_name                  String
-  age                        Int?
+  id                        String   @id @default(uuid())
+  trip_id                   String
+  full_name                 String
+  age                       Int?
   relation_to_primary_guest String?
-  assigned_service_ids       String[] @default([]) // Room/Cab split assignments
-  created_at                 DateTime @default(now())
-  updated_at                 DateTime @updatedAt
+  assigned_service_ids      String[] @default([])
+  created_at                DateTime @default(now())
+  updated_at                DateTime @updatedAt
 
   // Relations
   trip Trip @relation(fields: [trip_id], references: [id], onDelete: Cascade)
@@ -453,7 +485,7 @@ model TripTask {
 }
 
 // ==========================================
-// MASTER DATA STUBS: DESTINATIONS & SOURCES (PRD Part 3)
+// MASTER DATA & CONTRACTING (PRD Part 3)
 // ==========================================
 
 model TripDestination {
@@ -469,29 +501,216 @@ model TripDestination {
   updated_at             DateTime @updatedAt
 
   // Relations
-  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  primary_trips   Trip[]       @relation("PrimaryDestination")
-  secondary_trips Trip[]       @relation("SecondaryDestination")
+  organization       Organization       @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  primary_trips      Trip[]             @relation("PrimaryDestination")
+  secondary_trips    Trip[]             @relation("SecondaryDestination")
+  hotels             Hotel[]
+  transport_services TransportService[]
+  travel_activities  TravelActivity[]
+  itineraries        Itinerary[]
 
   @@index([organization_id])
   @@map("trip_destinations")
 }
 
+model Supplier {
+  id              String       @id @default(uuid())
+  organization_id String
+  name            String
+  type            SupplierType @default(HOTEL)
+  contact_name    String?
+  contact_number  String?
+  email           String?
+  notes           String?      @db.Text
+  is_archived     Boolean      @default(false)
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+
+  // Relations
+  organization       Organization       @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  hotels             Hotel[]
+  transport_services TransportService[]
+  travel_activities  TravelActivity[]
+
+  @@index([organization_id])
+  @@index([type])
+  @@map("suppliers")
+}
+
+model Hotel {
+  id              String           @id @default(uuid())
+  organization_id String
+  destination_id  String
+  supplier_id     String?
+  name            String
+  star_rating     Int              @default(3)
+  address         String?
+  website_url     String?
+  general_notes   String?          @db.Text
+  entry_method    HotelEntryMethod @default(MANUAL)
+  is_archived     Boolean          @default(false)
+  merged_into_id  String? // Nullable FK for duplicate hotel merging
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
+
+  // Relations
+  organization Organization    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  destination  TripDestination @relation(fields: [destination_id], references: [id], onDelete: Restrict)
+  supplier     Supplier?       @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+  merged_into  Hotel?          @relation("HotelMerges", fields: [merged_into_id], references: [id], onDelete: SetNull)
+  merged_from  Hotel[]         @relation("HotelMerges")
+  rooms        HotelRoom[]
+
+  @@index([organization_id])
+  @@index([destination_id])
+  @@index([supplier_id])
+  @@index([name])
+  @@map("hotels")
+}
+
+model HotelRoom {
+  id                  String   @id @default(uuid())
+  hotel_id            String
+  room_type           String // e.g. "Deluxe Room", "Standard"
+  meal_plan           String   @default("CP") // e.g. "EP", "CP", "MAP", "AP"
+  max_occupancy       Int      @default(2)
+  extra_bed_supported Boolean  @default(true)
+  total_room_count    Int? // e.g. 40 (extracted from "40R")
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  // Relations
+  hotel       Hotel       @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
+  rate_sheets RateSheet[]
+
+  @@index([hotel_id])
+  @@map("hotel_rooms")
+}
+
+model RateSheet {
+  id                   String        @id @default(uuid())
+  organization_id      String
+  hotel_room_id        String? // Polymorphic-by-nullable-FK
+  transport_service_id String?
+  activity_id          String?
+  season_name          String // e.g. "Peak — Oct-Nov", "Off-Peak"
+  valid_from           DateTime
+  valid_to             DateTime
+  occupancy_type       OccupancyType @default(DOUBLE)
+  weekday_price        Decimal       @db.Decimal(12, 2)
+  weekend_price        Decimal?      @db.Decimal(12, 2)
+  sales_price          Decimal?      @db.Decimal(12, 2) // Sales-team specific rate
+  ops_price            Decimal?      @db.Decimal(12, 2) // Ops-team cost rate
+  currency             String        @default("USD")
+  is_stop_sale         Boolean       @default(false)
+  blackout_dates       DateTime[]    @default([])
+  is_archived          Boolean       @default(false)
+  created_at           DateTime      @default(now())
+  updated_at           DateTime      @updatedAt
+
+  // Relations
+  organization      Organization      @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  hotel_room        HotelRoom?        @relation(fields: [hotel_room_id], references: [id], onDelete: Cascade)
+  transport_service TransportService? @relation(fields: [transport_service_id], references: [id], onDelete: Cascade)
+  travel_activity   TravelActivity?   @relation(fields: [activity_id], references: [id], onDelete: Cascade)
+
+  @@index([organization_id])
+  @@index([hotel_room_id])
+  @@index([transport_service_id])
+  @@index([activity_id])
+  @@index([valid_from, valid_to])
+  @@map("rate_sheets")
+}
+
+model TransportService {
+  id              String                 @id @default(uuid())
+  organization_id String
+  destination_id  String
+  supplier_id     String?
+  cab_type        String // e.g. "Scorpio SUV", "HiAce 14-Seater", "Sedan"
+  capacity        Int                    @default(4)
+  billing_metric  TransportBillingMetric @default(PER_DAY)
+  closing_days    Int[]                  @default([]) // Weekday integers [0..6]
+  is_archived     Boolean                @default(false)
+  created_at      DateTime               @default(now())
+  updated_at      DateTime               @updatedAt
+
+  // Relations
+  organization Organization    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  destination  TripDestination @relation(fields: [destination_id], references: [id], onDelete: Restrict)
+  supplier     Supplier?       @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+  rate_sheets  RateSheet[]
+
+  @@index([organization_id])
+  @@index([destination_id])
+  @@index([supplier_id])
+  @@map("transport_services")
+}
+
+model TravelActivity {
+  id              String   @id @default(uuid())
+  organization_id String
+  destination_id  String
+  supplier_id     String?
+  name            String // e.g. "Pokhara Paragliding", "Chitwan Jungle Safari"
+  ticket_type     String   @default("PER_PERSON") // "PER_PERSON", "PER_BOAT", etc.
+  closing_days    Int[]    @default([])
+  is_group_priced Boolean  @default(false)
+  group_size      Int?     @default(1)
+  is_archived     Boolean  @default(false)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  organization Organization    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  destination  TripDestination @relation(fields: [destination_id], references: [id], onDelete: Restrict)
+  supplier     Supplier?       @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+  rate_sheets  RateSheet[]
+
+  @@index([organization_id])
+  @@index([destination_id])
+  @@index([supplier_id])
+  @@map("travel_activities")
+}
+
+model Itinerary {
+  id              String   @id @default(uuid())
+  organization_id String
+  destination_id  String
+  title           String
+  day_number      Int      @default(1)
+  description     String   @db.Text
+  image_url       String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  organization Organization    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  destination  TripDestination @relation(fields: [destination_id], references: [id], onDelete: Restrict)
+
+  @@index([organization_id])
+  @@index([destination_id])
+  @@map("itineraries")
+}
+
 model TripSource {
-  id                          String         @id @default(uuid())
-  organization_id             String
-  name                        String // e.g. "MakeMyTrip B2B", "Instagram Ads", "Direct Walk-in"
-  type                        TripSourceType @default(DIRECT)
-  contact_person              String?
-  billing_details             String?        @db.Text
-  tags                        String[]       @default([])
-  is_primary_contact_flagged  Boolean        @default(false)
-  is_archived                 Boolean        @default(false)
-  created_at                  DateTime       @default(now())
-  updated_at                  DateTime       @updatedAt
+  id                         String         @id @default(uuid())
+  organization_id            String
+  name                       String
+  type                       TripSourceType @default(DIRECT)
+  contact_person             String?
+  billing_details            String?        @db.Text
+  tags                       String[]       @default([])
+  is_primary_contact_flagged Boolean        @default(false)
+  is_archived                Boolean        @default(false)
+  merged_into_id             String? // Nullable FK for merging
+  created_at                 DateTime       @default(now())
+  updated_at                 DateTime       @updatedAt
 
   // Relations
   organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  merged_into  TripSource?  @relation("TripSourceMerges", fields: [merged_into_id], references: [id], onDelete: SetNull)
+  merged_from  TripSource[] @relation("TripSourceMerges")
   trips        Trip[]
 
   @@index([organization_id])
