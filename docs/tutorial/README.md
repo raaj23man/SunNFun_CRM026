@@ -17,9 +17,9 @@ This tutorial is specially crafted for **semi-technical vibe coders**, founders,
 | **[04. Phase 0 — Core Org, User & Multi-Tenant Schema](./04-phase0-org-and-multi-tenancy-schema.md)** | Schema design, Passkeys, 2FA enums, and auto-org-scoping extension. | Master multi-tenant database isolation |
 | **[05. Phase 0 — Auth Flows: Passkeys, 2FA & RBAC](./05-phase0-auth-flows-passkeys-and-rbac.md)** | NextAuth.js, @simplewebauthn, TOTP, RBAC middleware, Login UI. | Master the full auth & security layer |
 | **[06. Phase 0 — Org Settings, Users & Global Hardening](./06-phase0-org-settings-and-user-management.md)** | Tabbed Settings UI, User Invite flow, Teams, Centralized Error Handling, Sentry. | Master organization admin & hardening |
-| *[07. Phase 1 — CRM Core, Master Data & Quoting Engine (Upcoming)]* | Will cover Trips, Hotels, Rate Resolution, & Itineraries. | Automatically added in Phase 1 |
-| *[08. Phase 2 — Bookings, Operations & Financial Ledger (Upcoming)]* | Will cover Service Vouchers, Payments, & Driver/Guide sheets. | Automatically added in Phase 2 |
-| *[09. Phase 3 — Automations & AI Agent Layer (Upcoming)]* | Will cover n8n webhooks, WhatsApp, & AI Quote Suggestions. | Automatically added in Phase 3 |
+| **[07. Phase 1 — CRM Core Schema & Trip Lifecycle](./07-phase1-crm-core-schema-and-trip-lifecycle.md)** | Guest, TripPlanRequest, Trip, Tourist, FollowUp, Display IDs, Hold/Cancel/Drop state machine. | Master CRM core lead pipeline |
+| *[08. Phase 1 — Quoting Engine, Hotel Master Data & Itineraries (Upcoming)]* | Will cover Hotels, Rate Resolution, line items, and PDF generator. | Automatically added in Phase 1 |
+| *[09. Phase 2 — Bookings, Operations & Financial Ledger (Upcoming)]* | Will cover Service Vouchers, Payments, & Driver/Guide sheets. | Automatically added in Phase 2 |
 
 ---
 

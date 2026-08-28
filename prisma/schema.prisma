@@ -1,5 +1,5 @@
 // Prisma schema file for Travel CRM SaaS
-// Specification: TravelCRM_PRD_v2.md (Part 1 Section A & Part 8 Section A)
+// Specification: TravelCRM_PRD_v2.md (Part 1 Section A, Part 2 Section A, Part 3 Section A & Part 8 Section A)
 
 generator client {
   provider = "prisma-client-js"
@@ -11,7 +11,7 @@ datasource db {
 }
 
 // ==========================================
-// ENUMS
+// ENUMS (PRD Part 1 & Part 2)
 // ==========================================
 
 enum Role {
@@ -35,8 +35,58 @@ enum ThemePreference {
   DARK
 }
 
+enum DocumentType {
+  PASSPORT
+  VISA
+  NATIONAL_ID
+  OTHER
+}
+
+enum DocumentUploadSource {
+  AGENT
+  SELF_SERVICE_LINK
+}
+
+enum PlanRequestSource {
+  WEBSITE_FORM
+  META_ADS
+  GOOGLE_ADS
+  CHATBOT
+  MANUAL
+}
+
+enum PlanRequestStatus {
+  UNASSIGNED
+  ASSIGNED
+  CONVERTED_TO_TRIP
+  REJECTED
+}
+
+enum TripStatus {
+  NEW_QUERY
+  IN_PROGRESS
+  ON_HOLD
+  CONVERTED
+  COMPLETED
+  CANCELLED
+  DROPPED
+}
+
+enum FollowUpStatus {
+  PENDING
+  COMPLETED
+  OVERDUE
+}
+
+enum TripSourceType {
+  B2B_AGENT
+  DIGITAL_CHANNEL
+  DIRECT
+  REFERRAL
+}
+
 // ==========================================
-// ORGANIZATION & BRAND CORE
+// ORGANIZATION & BRAND CORE (PRD Part 1)
 // ==========================================
 
 model Organization {
@@ -55,11 +105,16 @@ model Organization {
   updated_at             DateTime @updatedAt
 
   // Relations
-  brands            Brand[]
-  billing_addresses BillingAddress[]
-  bank_accounts     BankAccount[]
-  users             User[]
-  teams             Team[]
+  brands             Brand[]
+  billing_addresses  BillingAddress[]
+  bank_accounts      BankAccount[]
+  users              User[]
+  teams              Team[]
+  guests             Guest[]
+  trip_plan_requests TripPlanRequest[]
+  trips              Trip[]
+  destinations       TripDestination[]
+  trip_sources       TripSource[]
 
   @@map("organizations")
 }
@@ -77,6 +132,7 @@ model Brand {
 
   // Relations
   organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  trips        Trip[]
 
   @@index([organization_id])
   @@map("brands")
@@ -119,7 +175,7 @@ model BankAccount {
 }
 
 // ==========================================
-// USER, TEAM & PERMISSIONS
+// USER, TEAM & PERMISSIONS (PRD Part 1)
 // ==========================================
 
 model User {
@@ -141,10 +197,15 @@ model User {
   updated_at         DateTime        @updatedAt
 
   // Relations
-  organization         Organization             @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  team                 Team?                    @relation(fields: [team_id], references: [id], onDelete: SetNull)
-  permission_overrides UserPermissionOverride[]
-  passkeys             Passkey[]
+  organization           Organization             @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  team                   Team?                    @relation(fields: [team_id], references: [id], onDelete: SetNull)
+  permission_overrides   UserPermissionOverride[]
+  passkeys               Passkey[]
+  assigned_trips         Trip[]                   @relation("AssignedTrips")
+  assigned_plan_requests TripPlanRequest[]        @relation("AssignedPlanRequests")
+  assigned_follow_ups    FollowUp[]               @relation("UserFollowUps")
+  created_tasks          TripTask[]               @relation("CreatedTasks")
+  assigned_tasks         TripTask[]               @relation("AssignedTasks")
 
   @@index([organization_id])
   @@index([team_id])
@@ -162,6 +223,7 @@ model Team {
   // Relations
   organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   users        User[]
+  trips        Trip[]
 
   @@index([organization_id])
   @@map("teams")
@@ -198,4 +260,240 @@ model Passkey {
 
   @@index([user_id])
   @@map("passkeys")
+}
+
+// ==========================================
+// CRM CORE: GUESTS & DOCUMENTS (PRD Part 2)
+// ==========================================
+
+model Guest {
+  id                 String   @id @default(uuid())
+  organization_id    String
+  full_name          String
+  phone_number       String
+  email              String?
+  salutation         String? // e.g. "Mr.", "Mrs.", "Dr."
+  is_repeat_traveler Boolean  @default(false)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  // Relations
+  organization Organization    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  documents    GuestDocument[]
+  trips        Trip[]
+
+  @@index([organization_id])
+  @@index([phone_number])
+  @@index([organization_id, phone_number])
+  @@map("guests")
+}
+
+model GuestDocument {
+  id                String               @id @default(uuid())
+  guest_id          String
+  document_type     DocumentType
+  file_url          String
+  expiry_date       DateTime?
+  uploaded_via      DocumentUploadSource @default(AGENT)
+  upload_link_token String?              @unique
+  created_at        DateTime             @default(now())
+  updated_at        DateTime             @updatedAt
+
+  // Relations
+  guest Guest @relation(fields: [guest_id], references: [id], onDelete: Cascade)
+
+  @@index([guest_id])
+  @@map("guest_documents")
+}
+
+// ==========================================
+// CRM CORE: TRIP PLAN REQUESTS (PRD Part 2)
+// ==========================================
+
+model TripPlanRequest {
+  id                String            @id @default(uuid())
+  organization_id   String
+  source            PlanRequestSource @default(MANUAL)
+  raw_payload       Json?
+  guest_name        String
+  phone_number      String
+  email             String?
+  destination_text  String
+  status            PlanRequestStatus @default(UNASSIGNED)
+  assigned_user_id  String?
+  converted_trip_id String?           @unique
+  created_at        DateTime          @default(now())
+  updated_at        DateTime          @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  assigned_user  User?        @relation("AssignedPlanRequests", fields: [assigned_user_id], references: [id], onDelete: SetNull)
+  converted_trip Trip?        @relation(fields: [converted_trip_id], references: [id], onDelete: SetNull)
+
+  @@index([organization_id])
+  @@index([status])
+  @@index([assigned_user_id])
+  @@map("trip_plan_requests")
+}
+
+// ==========================================
+// CRM CORE: TRIPS / QUERIES (PRD Part 2)
+// ==========================================
+
+model Trip {
+  id                        String     @id @default(uuid())
+  trip_display_id           String     @unique // e.g. "SBC-81881"
+  sequence_number           Int // Auto-incrementing sequence per org
+  organization_id           String
+  brand_id                  String
+  team_id                   String?
+  assigned_user_id          String
+  guest_id                  String
+  destination_id            String?
+  secondary_destination_id  String?
+  start_date                DateTime
+  duration_days             Int
+  duration_nights           Int
+  pax_adults                Int        @default(1)
+  pax_children              Int        @default(0)
+  origin_city               String?
+  trip_source_id            String?
+  status                    TripStatus @default(NEW_QUERY)
+  is_locked                 Boolean    @default(false) // Sembark auto-locks past trips
+  is_archived               Boolean    @default(false) // Sembark auto-archives >1 yr
+  tags                      String[]   @default([])
+  package_amount            Decimal?   @db.Decimal(12, 2)
+  currency                  String?    @default("USD")
+  created_at                DateTime   @default(now())
+  updated_at                DateTime   @updatedAt
+
+  // Relations
+  organization          Organization     @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  brand                 Brand            @relation(fields: [brand_id], references: [id], onDelete: Cascade)
+  team                  Team?            @relation(fields: [team_id], references: [id], onDelete: SetNull)
+  assigned_user         User             @relation("AssignedTrips", fields: [assigned_user_id], references: [id], onDelete: Restrict)
+  guest                 Guest            @relation(fields: [guest_id], references: [id], onDelete: Restrict)
+  destination           TripDestination? @relation("PrimaryDestination", fields: [destination_id], references: [id], onDelete: SetNull)
+  secondary_destination TripDestination? @relation("SecondaryDestination", fields: [secondary_destination_id], references: [id], onDelete: SetNull)
+  trip_source           TripSource?      @relation(fields: [trip_source_id], references: [id], onDelete: SetNull)
+  tourists              Tourist[]
+  follow_ups            FollowUp[]
+  tasks                 TripTask[]
+  trip_plan_request     TripPlanRequest?
+
+  @@unique([organization_id, sequence_number])
+  @@index([organization_id])
+  @@index([status])
+  @@index([assigned_user_id])
+  @@index([guest_id])
+  @@index([destination_id])
+  @@index([created_at])
+  @@map("trips")
+}
+
+model Tourist {
+  id                         String   @id @default(uuid())
+  trip_id                    String
+  full_name                  String
+  age                        Int?
+  relation_to_primary_guest String?
+  assigned_service_ids       String[] @default([]) // Room/Cab split assignments
+  created_at                 DateTime @default(now())
+  updated_at                 DateTime @updatedAt
+
+  // Relations
+  trip Trip @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+
+  @@index([trip_id])
+  @@map("tourists")
+}
+
+model FollowUp {
+  id                    String         @id @default(uuid())
+  trip_id               String
+  assigned_to_user_id   String
+  due_date              DateTime
+  remarks               String         @db.Text
+  status                FollowUpStatus @default(PENDING)
+  is_actionable_comment Boolean        @default(true)
+  created_at            DateTime       @default(now())
+  updated_at            DateTime       @updatedAt
+
+  // Relations
+  trip        Trip @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  assigned_to User @relation("UserFollowUps", fields: [assigned_to_user_id], references: [id], onDelete: Restrict)
+
+  @@index([trip_id])
+  @@index([assigned_to_user_id])
+  @@index([due_date])
+  @@index([status])
+  @@map("follow_ups")
+}
+
+model TripTask {
+  id                    String   @id @default(uuid())
+  trip_id               String
+  created_by_user_id    String
+  assigned_to_user_id   String?
+  content               String   @db.Text
+  is_completed          Boolean  @default(false)
+  notify_on_assignment Boolean  @default(true)
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  // Relations
+  trip        Trip  @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  created_by  User  @relation("CreatedTasks", fields: [created_by_user_id], references: [id], onDelete: Restrict)
+  assigned_to User? @relation("AssignedTasks", fields: [assigned_to_user_id], references: [id], onDelete: SetNull)
+
+  @@index([trip_id])
+  @@index([created_by_user_id])
+  @@index([assigned_to_user_id])
+  @@map("trip_tasks")
+}
+
+// ==========================================
+// MASTER DATA STUBS: DESTINATIONS & SOURCES (PRD Part 3)
+// ==========================================
+
+model TripDestination {
+  id                     String   @id @default(uuid())
+  organization_id        String
+  name                   String // e.g. "Kathmandu", "Pokhara", "Vietnam"
+  image_url              String?
+  support_contact_number String?
+  child_max_age          Int      @default(10)
+  default_checkin_time   String?  @default("14:00")
+  default_checkout_time  String?  @default("11:00")
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+
+  // Relations
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  primary_trips   Trip[]       @relation("PrimaryDestination")
+  secondary_trips Trip[]       @relation("SecondaryDestination")
+
+  @@index([organization_id])
+  @@map("trip_destinations")
+}
+
+model TripSource {
+  id                          String         @id @default(uuid())
+  organization_id             String
+  name                        String // e.g. "MakeMyTrip B2B", "Instagram Ads", "Direct Walk-in"
+  type                        TripSourceType @default(DIRECT)
+  contact_person              String?
+  billing_details             String?        @db.Text
+  tags                        String[]       @default([])
+  is_primary_contact_flagged  Boolean        @default(false)
+  is_archived                 Boolean        @default(false)
+  created_at                  DateTime       @default(now())
+  updated_at                  DateTime       @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  trips        Trip[]
+
+  @@index([organization_id])
+  @@map("trip_sources")
 }

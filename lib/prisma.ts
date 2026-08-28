@@ -27,6 +27,11 @@ export const TENANT_SCOPED_MODELS = [
   "BankAccount",
   "User",
   "Team",
+  "Guest",
+  "TripPlanRequest",
+  "Trip",
+  "TripDestination",
+  "TripSource",
 ] as const;
 
 export type TenantScopedModel = (typeof TENANT_SCOPED_MODELS)[number];
