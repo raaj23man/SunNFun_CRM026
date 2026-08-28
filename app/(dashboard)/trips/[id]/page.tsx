@@ -259,6 +259,16 @@ export default function TripDetailsPage() {
 
         {/* Lifecycle Action Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
+          <Link href={`/trips/${tripId}/quotes`}>
+            <Button
+              size="sm"
+              className="h-8 text-xs gap-1.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold shadow-xs"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Quote Builder
+            </Button>
+          </Link>
+
           {/* Pre-Conversion Actions */}
           {isPreConversion && (
             <>
