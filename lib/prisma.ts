@@ -42,6 +42,8 @@ export const TENANT_SCOPED_MODELS = [
   "TaxType",
   "QuoteTemplate",
   "AuditLog",
+  "ServiceBooking",
+  "Voucher",
 ] as const;
 
 export type TenantScopedModel = (typeof TENANT_SCOPED_MODELS)[number];

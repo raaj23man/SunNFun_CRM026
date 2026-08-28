@@ -22,7 +22,8 @@ This tutorial is specially crafted for **semi-technical vibe coders**, founders,
 | **[09. Phase 1 — Smart Dashboard, Lead Pipeline & Inbound Plan Requests](./09-phase1-smart-dashboard-lead-pipeline-and-requests.md)** | 4 Dashboard Cards, Fast 5-min Cached Pipeline, Click-to-dial, Inbound Leads, Guest Document Upload. | Master CRM frontend & lead workflow |
 | **[10. Phase 1 — Quotation Schema & Pricing Strategies](./10-phase1-quotation-engine-and-pricing-strategies.md)** | Quote, QuoteOption, QuoteDay, QuoteItem, FlightSegment, TaxType, 4 Pricing Strategies pure engine, Flight validation. | Master quotation pricing & financial math |
 | **[11. Phase 1 — Quote Builder UI, Multi-Option Tiers & PDF Generator](./11-phase1-quote-builder-multi-option-and-pdf.md)** | Dynamic Quote Builder form, Isolated Quick Add modal, Multi-Option tabs, Puppeteer PDF export, WhatsApp sharing. | Master proposal authoring & client delivery |
-| *[12. Phase 2 — Operational Bookings, Vouchers & Financial Ledger (Upcoming)]* | Will cover Service Vouchers, Payments, & Driver/Guide sheets. | Automatically added in Phase 2 |
+| **[12. Phase 2 — Operations, Service Bookings & Change vs. Drop](./12-phase2-part5-operations-dispatch-and-service-bookings.md)** | ServiceBooking, DispatchAssignment, Voucher schema, Change vs Drop chaining, Refund installment trigger, Enquiry drafts. | Master operational execution & bookings |
+| *[13. Phase 2 — Smart Calendars, Dispatch Share & Vouchers (Upcoming)]* | Will cover Operational Calendar grid, Driver/Guest dispatch text, and Voucher PDFs. | Automatically added in next task |
 
 ---
 

@@ -151,6 +151,8 @@ model Organization {
   tax_types          TaxType[]
   quote_templates    QuoteTemplate[]
   audit_logs         AuditLog[]
+  service_bookings   ServiceBooking[]
+  vouchers           Voucher[]
 
   @@map("organizations")
 }
@@ -418,6 +420,8 @@ model Trip {
   tasks                 TripTask[]
   trip_plan_request     TripPlanRequest?
   quotes                Quote[]
+  service_bookings      ServiceBooking[]
+  vouchers              Voucher[]
 
   @@unique([organization_id, sequence_number])
   @@index([organization_id])
@@ -537,6 +541,7 @@ model Supplier {
   hotels             Hotel[]
   transport_services TransportService[]
   travel_activities  TravelActivity[]
+  service_bookings   ServiceBooking[]
 
   @@index([organization_id])
   @@index([type])
@@ -566,6 +571,7 @@ model Hotel {
   merged_into  Hotel?          @relation("HotelMerges", fields: [merged_into_id], references: [id], onDelete: SetNull)
   merged_from  Hotel[]         @relation("HotelMerges")
   rooms        HotelRoom[]
+  service_bookings ServiceBooking[]
 
   @@index([organization_id])
   @@index([destination_id])
@@ -868,6 +874,7 @@ model QuoteItem {
   // Relations
   quote_day       QuoteDay       @relation(fields: [quote_day_id], references: [id], onDelete: Cascade)
   tax_rate        TaxType?       @relation("ItemTaxRate", fields: [tax_rate_id], references: [id], onDelete: SetNull)
+  service_bookings ServiceBooking[]
 
   @@index([quote_day_id])
   @@index([inventory_id])
@@ -972,5 +979,124 @@ model AuditLog {
   @@index([created_at])
   @@map("audit_logs")
 }
+
+// ==========================================
+// PART 5: OPERATIONS, DISPATCH & SMART CALENDARS
+// ==========================================
+
+enum ServiceBookingStatus {
+  PENDING_CONFIRMATION
+  ENQUIRY_SENT
+  CONFIRMED
+  VOUCHER_GENERATED
+  CHANGED
+  DROPPED
+  CANCELLED
+}
+
+enum VoucherType {
+  HOTEL
+  TRANSPORT
+  ACTIVITY
+  TRIP
+}
+
+model ServiceBooking {
+  id                             String               @id @default(uuid())
+  organization_id                String
+  trip_id                        String
+  quote_item_id                  String?
+  supplier_id                    String?
+  hotel_id                       String?
+  service_type                   QuoteItemType        @default(HOTEL)
+  service_name                   String
+  status                         ServiceBookingStatus @default(PENDING_CONFIRMATION)
+  supplier_confirmation_number   String?
+  cost_price                     Decimal              @default(0) @db.Decimal(12, 2)
+  selling_price                  Decimal              @default(0) @db.Decimal(12, 2)
+  amount_paid                    Decimal              @default(0) @db.Decimal(12, 2)
+  is_self_booked                 Boolean              @default(false)
+  service_date                   DateTime
+  check_in_date                  DateTime?
+  check_out_date                 DateTime?
+  room_count                     Int                  @default(1)
+  pax_count                      Int                  @default(2)
+  meal_plan                      String?              @default("CP")
+  payment_preference_rule_id     String?
+  payment_due_date               DateTime?
+  drop_cancellation_charge       Decimal?             @db.Decimal(12, 2)
+  replaced_by_service_booking_id String?              // FK chaining a "change"
+  notes                          String?              @db.Text
+  created_at                     DateTime             @default(now())
+  updated_at                     DateTime             @updatedAt
+
+  // Relations
+  organization                   Organization         @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  trip                           Trip                 @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  quote_item                     QuoteItem?           @relation(fields: [quote_item_id], references: [id], onDelete: SetNull)
+  supplier                       Supplier?            @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+  hotel                          Hotel?               @relation(fields: [hotel_id], references: [id], onDelete: SetNull)
+  replaced_by                    ServiceBooking?      @relation("ServiceBookingChaining", fields: [replaced_by_service_booking_id], references: [id], onDelete: SetNull)
+  replaces                       ServiceBooking[]     @relation("ServiceBookingChaining")
+  dispatch_assignment            DispatchAssignment?
+  vouchers                       Voucher[]
+
+  @@index([organization_id])
+  @@index([trip_id])
+  @@index([supplier_id])
+  @@index([hotel_id])
+  @@index([status])
+  @@index([service_date])
+  @@index([check_in_date, check_out_date])
+  @@map("service_bookings")
+}
+
+model DispatchAssignment {
+  id                 String         @id @default(uuid())
+  service_booking_id String         @unique
+  driver_name        String
+  driver_phone       String
+  cab_type           String
+  vehicle_number     String
+  pickup_time        DateTime?
+  pickup_location    String?
+  drop_location      String?
+  notes              String?        @db.Text
+  created_at         DateTime       @default(now())
+  updated_at         DateTime       @updatedAt
+
+  // Relations
+  service_booking    ServiceBooking @relation(fields: [service_booking_id], references: [id], onDelete: Cascade)
+
+  @@map("dispatch_assignments")
+}
+
+model Voucher {
+  id                         String         @id @default(uuid())
+  organization_id            String
+  trip_id                    String
+  service_booking_id         String?        // Nullable if type === TRIP
+  type                       VoucherType    @default(HOTEL)
+  voucher_code               String         // Unique code, e.g. "VCH-10001-H1"
+  pdf_url                    String?        // Signed S3 URL
+  qr_code_data               String?        // For activity/trip vouchers
+  is_edited_after_generation Boolean        @default(false)
+  custom_content             Json?          // Stores customized section overrides
+  generated_at               DateTime       @default(now())
+  created_at                 DateTime       @default(now())
+  updated_at                 DateTime       @updatedAt
+
+  // Relations
+  organization               Organization   @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  trip                       Trip           @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  service_booking            ServiceBooking? @relation(fields: [service_booking_id], references: [id], onDelete: SetNull)
+
+  @@unique([organization_id, voucher_code])
+  @@index([organization_id])
+  @@index([trip_id])
+  @@index([service_booking_id])
+  @@map("vouchers")
+}
+
 
 
