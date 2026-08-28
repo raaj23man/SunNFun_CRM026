@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   Compass,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
@@ -93,6 +94,12 @@ export default function DashboardLayout({
       href: "/trip-plan-requests",
       icon: Inbox,
       roles: ["SUPER_ADMIN", "ADMIN", "SALES_HEAD", "SALES_PERSON"],
+    },
+    {
+      label: "Operations Calendar",
+      href: "/operations/calendar",
+      icon: Calendar,
+      roles: ["SUPER_ADMIN", "ADMIN", "SALES_HEAD", "OPERATIONS", "RESERVATIONS", "ACCOUNTANT", "DATA_OPERATOR"],
     },
     {
       label: "Organization Settings",
