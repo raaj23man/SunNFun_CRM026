@@ -24,7 +24,8 @@ This tutorial is specially crafted for **semi-technical vibe coders**, founders,
 | **[11. Phase 1 — Quote Builder UI, Multi-Option Tiers & PDF Generator](./11-phase1-quote-builder-multi-option-and-pdf.md)** | Dynamic Quote Builder form, Isolated Quick Add modal, Multi-Option tabs, Puppeteer PDF export, WhatsApp sharing. | Master proposal authoring & client delivery |
 | **[12. Phase 2 — Operations, Service Bookings & Change vs. Drop](./12-phase2-part5-operations-dispatch-and-service-bookings.md)** | ServiceBooking, DispatchAssignment, Voucher schema, Change vs Drop chaining, Refund installment trigger, Enquiry drafts. | Master operational execution & bookings |
 | **[13. Phase 2 — Smart Calendars, Dispatch Share & Vouchers](./13-phase2-smart-calendars-dispatch-share-and-vouchers.md)** | High-performance 500+ booking matrix, Driver vs. Guest zero-price-leak dispatch, Payment due-date preview, Voucher editing. | Master operations calendar & dispatch |
-| *[14. Phase 2 — Financial Accounting, Ledgers & Paddle Payments (Upcoming)]* | Will cover ClientLedger, SupplierLedger, Proforma Invoices & Paddle integration. | Automatically added in Part 6 |
+| **[14. Phase 2 — Financial Accounting, Atomic Ledgers & Revert Guards](./14-phase2-financial-ledgers-atomic-transactions-and-reverts.md)** | Client/Supplier ledgers, ACID $transaction logging, Locked-trip 403 guard on revert, Drop refund installment wiring. | Master financial accounting & transactions |
+| *[15. Phase 2 — Proforma Invoices, Reports & Paddle Payments (Upcoming)]* | Will cover Proforma Invoice generator, Profit reports with pending-booking banners & Paddle webhook. | Automatically added in next task |
 
 ---
 

@@ -43,44 +43,32 @@ export const POST = withAuthAndRbac(
     const isRefundRequired = amountPaid > cancellationCharge;
     const refundAmount = isRefundRequired ? amountPaid - cancellationCharge : 0;
 
-    // Execute drop mutation
-    const droppedBooking = await scopedPrisma.serviceBooking.update({
-      where: { id: bookingId },
-      data: {
-        status: ServiceBookingStatus.DROPPED,
-        drop_cancellation_charge: cancellationCharge,
-        notes: validated.reason ? `Dropped: ${validated.reason}` : booking.notes,
-      },
+    // Execute drop mutation & atomic refund installment inside Prisma $transaction
+    const result = await scopedPrisma.$transaction(async (tx: any) => {
+      const dropped = await tx.serviceBooking.update({
+        where: { id: bookingId },
+        data: {
+          status: ServiceBookingStatus.DROPPED,
+          drop_cancellation_charge: cancellationCharge,
+          notes: validated.reason ? `Dropped: ${validated.reason}` : booking.notes,
+        },
+      });
+
+      let refundTx = null;
+      if (isRefundRequired) {
+        const { processDropRefundInstallment } = await import("@/lib/finance-service");
+        refundTx = await processDropRefundInstallment(tx, {
+          organization_id: user.organization_id,
+          trip_id: booking.trip_id,
+          service_booking_id: bookingId,
+          refund_amount: refundAmount,
+          user_id: user.id,
+          service_name: booking.service_name,
+        });
+      }
+
+      return { dropped, refundTx };
     });
-
-    // =========================================================================
-    // AUTOMATIC REFUND-INSTALLMENT TRIGGER (PRD Part 5 / Part 6 Bridge)
-    // =========================================================================
-    let refundInstallmentDetails = null;
-
-    if (isRefundRequired) {
-      refundInstallmentDetails = {
-        status: "PENDING_LEDGER_POSTING",
-        refund_amount: refundAmount,
-        original_amount_paid: amountPaid,
-        cancellation_charge_retained: cancellationCharge,
-        currency: "USD", // Inherited from trip/org
-        beneficiary_type: "CLIENT_OR_SUPPLIER",
-        trigger_reason: `Service Booking Dropped: ${booking.service_name} (${booking.trip?.trip_display_id || "TRIP"})`,
-      };
-
-      // TODO [Part 6 Financial Accounting]: When ClientLedger / SupplierLedger tables are migrated in Task D.3,
-      // write an atomic ledger reversal transaction here:
-      // await tx.financialTransaction.create({
-      //   data: {
-      //     organization_id: user.organization_id,
-      //     type: "REFUND_PAYABLE",
-      //     amount: refundAmount,
-      //     reference_service_booking_id: bookingId,
-      //     status: "DUE",
-      //   }
-      // });
-    }
 
     // Write audit log
     await writeAuditLog(scopedPrisma, {
@@ -101,9 +89,9 @@ export const POST = withAuthAndRbac(
 
     return NextResponse.json({
       success: true,
-      message: "Service booking dropped successfully.",
-      booking: droppedBooking,
-      refund_installment: refundInstallmentDetails,
+      message: "Service booking dropped successfully and ledger refund installment posted.",
+      booking: result.dropped,
+      refund_transaction: result.refundTx,
     });
   },
   {

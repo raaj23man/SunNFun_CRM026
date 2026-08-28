@@ -153,6 +153,13 @@ model Organization {
   audit_logs         AuditLog[]
   service_bookings   ServiceBooking[]
   vouchers           Voucher[]
+  accounts                   Account[]
+  client_ledgers             ClientLedger[]
+  supplier_ledgers           SupplierLedger[]
+  financial_transactions     FinancialTransaction[]
+  payment_preference_rules   PaymentPreferenceRule[]
+  proforma_invoices          ProformaInvoice[]
+  payment_gateway_trans      PaymentGatewayTransaction[]
 
   @@map("organizations")
 }
@@ -245,6 +252,7 @@ model User {
   created_tasks          TripTask[]               @relation("CreatedTasks")
   assigned_tasks         TripTask[]               @relation("AssignedTasks")
   audit_logs             AuditLog[]
+  logged_transactions    FinancialTransaction[]   @relation("LoggedFinancialTransactions")
 
   @@index([organization_id])
   @@index([team_id])
@@ -422,6 +430,11 @@ model Trip {
   quotes                Quote[]
   service_bookings      ServiceBooking[]
   vouchers              Voucher[]
+  client_ledger         ClientLedger?
+  supplier_ledgers      SupplierLedger[]
+  financial_transactions FinancialTransaction[]
+  proforma_invoices     ProformaInvoice[]
+  payment_gateway_trans PaymentGatewayTransaction[]
 
   @@unique([organization_id, sequence_number])
   @@index([organization_id])
@@ -542,6 +555,9 @@ model Supplier {
   transport_services TransportService[]
   travel_activities  TravelActivity[]
   service_bookings   ServiceBooking[]
+  accounts           Account[]
+  supplier_ledgers   SupplierLedger[]
+  payment_rules      PaymentPreferenceRule[]
 
   @@index([organization_id])
   @@index([type])
@@ -724,6 +740,7 @@ model TripSource {
   merged_into  TripSource?  @relation("TripSourceMerges", fields: [merged_into_id], references: [id], onDelete: SetNull)
   merged_from  TripSource[] @relation("TripSourceMerges")
   trips        Trip[]
+  accounts     Account[]
 
   @@index([organization_id])
   @@map("trip_sources")
@@ -809,6 +826,7 @@ model Quote {
   overall_tax_rate           TaxType?        @relation("QuoteOverallTax", fields: [overall_tax_rate_id], references: [id], onDelete: SetNull)
   options                    QuoteOption[]
   flight_segments            FlightSegment[]
+  proforma_invoices          ProformaInvoice[]
 
   @@unique([trip_id, version])
   @@index([organization_id])
@@ -923,6 +941,7 @@ model TaxType {
   organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   quotes          Quote[]      @relation("QuoteOverallTax")
   quote_items     QuoteItem[]  @relation("ItemTaxRate")
+  proforma_invoices ProformaInvoice[]
 
   @@index([organization_id])
   @@map("tax_types")
@@ -1040,6 +1059,8 @@ model ServiceBooking {
   replaces                       ServiceBooking[]     @relation("ServiceBookingChaining")
   dispatch_assignment            DispatchAssignment?
   vouchers                       Voucher[]
+  supplier_ledger                SupplierLedger?
+  financial_transactions         FinancialTransaction[]
 
   @@index([organization_id])
   @@index([trip_id])
@@ -1097,6 +1118,273 @@ model Voucher {
   @@index([service_booking_id])
   @@map("vouchers")
 }
+
+// ==========================================
+// PART 6: FINANCIAL ACCOUNTING, LEDGERS & PAYMENTS
+// ==========================================
+
+enum AccountType {
+  CLIENT
+  SUPPLIER
+  INTERNAL
+}
+
+enum LedgerPaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID_IN_FULL
+  REFUND_DUE
+  REFUNDED
+}
+
+enum FinancialEntityType {
+  CLIENT_PAYMENT
+  SUPPLIER_PAYMENT
+}
+
+enum PaymentMode {
+  BANK_TRANSFER
+  CASH
+  CREDIT_CARD
+  UPI
+  PAYMENT_GATEWAY
+}
+
+enum PaymentRuleAppliesTo {
+  CLIENT
+  SUPPLIER
+}
+
+enum ProformaInvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  CANCELLED
+}
+
+enum PaymentGatewayProvider {
+  PADDLE
+}
+
+enum PaymentGatewayStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  EXPIRED
+}
+
+model Account {
+  id                    String       @id @default(uuid())
+  organization_id       String
+  name                  String       // e.g. "Direct Client Ledger", "Himalayan Bank Ltd", "Marriott Corporate Credit"
+  type                  AccountType  @default(INTERNAL)
+  linked_trip_source_id String?
+  linked_supplier_id    String?
+  currency              String       @default("USD")
+  balance               Decimal      @default(0) @db.Decimal(12, 2)
+  is_disabled           Boolean      @default(false)
+  created_at            DateTime     @default(now())
+  updated_at            DateTime     @updatedAt
+
+  // Relations
+  organization          Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  linked_trip_source    TripSource?  @relation(fields: [linked_trip_source_id], references: [id], onDelete: SetNull)
+  linked_supplier       Supplier?    @relation(fields: [linked_supplier_id], references: [id], onDelete: SetNull)
+  client_ledgers        ClientLedger[]
+  supplier_ledgers      SupplierLedger[]
+  transactions          FinancialTransaction[]
+
+  @@index([organization_id])
+  @@index([type])
+  @@map("accounts")
+}
+
+model ClientLedger {
+  id                   String              @id @default(uuid())
+  organization_id      String
+  trip_id              String              @unique
+  account_id           String?
+  total_billed_amount  Decimal             @default(0) @db.Decimal(12, 2)
+  total_paid_amount    Decimal             @default(0) @db.Decimal(12, 2)
+  currency             String              @default("USD")
+  next_due_date        DateTime?
+  status               LedgerPaymentStatus @default(UNPAID)
+  created_at           DateTime            @default(now())
+  updated_at           DateTime            @updatedAt
+
+  // Relations
+  organization         Organization        @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  trip                 Trip                @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  account              Account?            @relation(fields: [account_id], references: [id], onDelete: SetNull)
+  transactions         FinancialTransaction[]
+  gateway_transactions PaymentGatewayTransaction[]
+
+  @@index([organization_id])
+  @@index([trip_id])
+  @@index([status])
+  @@index([next_due_date])
+  @@map("client_ledgers")
+}
+
+model SupplierLedger {
+  id                 String              @id @default(uuid())
+  organization_id    String
+  service_booking_id String              @unique
+  supplier_id        String?
+  account_id         String?
+  trip_id            String
+  total_cost_amount  Decimal             @default(0) @db.Decimal(12, 2)
+  total_paid_amount  Decimal             @default(0) @db.Decimal(12, 2)
+  currency           String              @default("USD")
+  due_date           DateTime?
+  status             LedgerPaymentStatus @default(UNPAID)
+  created_at         DateTime            @default(now())
+  updated_at         DateTime            @updatedAt
+
+  // Relations
+  organization       Organization        @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  service_booking    ServiceBooking      @relation(fields: [service_booking_id], references: [id], onDelete: Cascade)
+  supplier           Supplier?           @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+  account            Account?            @relation(fields: [account_id], references: [id], onDelete: SetNull)
+  trip               Trip                @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  transactions       FinancialTransaction[]
+
+  @@index([organization_id])
+  @@index([service_booking_id])
+  @@index([supplier_id])
+  @@index([trip_id])
+  @@index([status])
+  @@index([due_date])
+  @@map("supplier_ledgers")
+}
+
+model FinancialTransaction {
+  id                   String              @id @default(uuid())
+  organization_id      String
+  entity_type          FinancialEntityType // CLIENT_PAYMENT or SUPPLIER_PAYMENT
+  entity_id            String              // FK to client_ledger or supplier_ledger
+  trip_id              String?
+  service_booking_id   String?
+  account_id           String?
+  client_ledger_id     String?
+  supplier_ledger_id   String?
+  transaction_date     DateTime            @default(now())
+  amount               Decimal             @db.Decimal(12, 2)
+  currency             String              @default("USD")
+  payment_mode         PaymentMode         @default(BANK_TRANSFER)
+  reference_number     String?
+  remarks              String?             @db.Text
+  logged_by_user_id    String?
+  is_verified          Boolean             @default(false)
+  is_refund            Boolean             @default(false)
+  is_reverted          Boolean             @default(false)
+  reverted_at          DateTime?
+  created_at           DateTime            @default(now())
+  updated_at           DateTime            @updatedAt
+
+  // Relations
+  organization         Organization        @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  trip                 Trip?               @relation(fields: [trip_id], references: [id], onDelete: SetNull)
+  service_booking      ServiceBooking?     @relation(fields: [service_booking_id], references: [id], onDelete: SetNull)
+  account              Account?            @relation(fields: [account_id], references: [id], onDelete: SetNull)
+  client_ledger        ClientLedger?       @relation(fields: [client_ledger_id], references: [id], onDelete: SetNull)
+  supplier_ledger      SupplierLedger?     @relation(fields: [supplier_ledger_id], references: [id], onDelete: SetNull)
+  logged_by_user       User?               @relation("LoggedFinancialTransactions", fields: [logged_by_user_id], references: [id], onDelete: SetNull)
+
+  @@index([organization_id])
+  @@index([entity_type, entity_id])
+  @@index([trip_id])
+  @@index([client_ledger_id])
+  @@index([supplier_ledger_id])
+  @@index([transaction_date])
+  @@index([is_verified])
+  @@index([is_reverted])
+  @@map("financial_transactions")
+}
+
+model PaymentPreferenceRule {
+  id                    String               @id @default(uuid())
+  organization_id       String
+  supplier_id           String?
+  name                  String
+  applies_to            PaymentRuleAppliesTo @default(SUPPLIER)
+  rule_key              String               // e.g. "100_PCT_5D_AFTER_MONTH_END_OF_SERVICE"
+  days_offset           Int                  @default(0)
+  installment_breakdown Json?
+  created_at            DateTime             @default(now())
+  updated_at            DateTime             @updatedAt
+
+  // Relations
+  organization          Organization         @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  supplier              Supplier?            @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+
+  @@index([organization_id])
+  @@index([supplier_id])
+  @@map("payment_preference_rules")
+}
+
+model ProformaInvoice {
+  id                     String                @id @default(uuid())
+  organization_id        String
+  trip_id                String
+  quote_id               String?
+  invoice_number         String                // e.g. "PI-SBC-10001-01"
+  buyer_billing_details  Json?
+  line_items             Json?
+  tax_type_id            String?
+  include_hsn_code       Boolean               @default(false)
+  amount                 Decimal               @db.Decimal(12, 2)
+  tax_amount             Decimal               @default(0) @db.Decimal(12, 2)
+  currency               String                @default("USD")
+  due_date               DateTime?
+  status                 ProformaInvoiceStatus @default(DRAFT)
+  pdf_url                String?
+  created_at             DateTime              @default(now())
+  updated_at             DateTime              @updatedAt
+
+  // Relations
+  organization           Organization          @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  trip                   Trip                  @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  quote                  Quote?                @relation(fields: [quote_id], references: [id], onDelete: SetNull)
+  tax_type               TaxType?              @relation(fields: [tax_type_id], references: [id], onDelete: SetNull)
+
+  @@unique([organization_id, invoice_number])
+  @@index([organization_id])
+  @@index([trip_id])
+  @@index([status])
+  @@map("proforma_invoices")
+}
+
+model PaymentGatewayTransaction {
+  id                     String                 @id @default(uuid())
+  organization_id        String
+  trip_id                String
+  client_ledger_id       String
+  gateway                PaymentGatewayProvider @default(PADDLE)
+  gateway_transaction_id String                 @unique
+  checkout_id            String?
+  payment_link_url       String?
+  status                 PaymentGatewayStatus   @default(PENDING)
+  amount                 Decimal                @db.Decimal(12, 2)
+  currency               String                 @default("USD")
+  raw_payload            Json?
+  webhook_last_event_at  DateTime?
+  created_at             DateTime               @default(now())
+  updated_at             DateTime               @updatedAt
+
+  // Relations
+  organization           Organization           @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  trip                   Trip                   @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  client_ledger          ClientLedger           @relation(fields: [client_ledger_id], references: [id], onDelete: Cascade)
+
+  @@index([organization_id])
+  @@index([trip_id])
+  @@index([client_ledger_id])
+  @@index([gateway_transaction_id])
+  @@index([status])
+  @@map("payment_gateway_transactions")
+}
+
 
 
 

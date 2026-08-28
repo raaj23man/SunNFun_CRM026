@@ -44,6 +44,13 @@ export const TENANT_SCOPED_MODELS = [
   "AuditLog",
   "ServiceBooking",
   "Voucher",
+  "Account",
+  "ClientLedger",
+  "SupplierLedger",
+  "FinancialTransaction",
+  "PaymentPreferenceRule",
+  "ProformaInvoice",
+  "PaymentGatewayTransaction",
 ] as const;
 
 export type TenantScopedModel = (typeof TENANT_SCOPED_MODELS)[number];
