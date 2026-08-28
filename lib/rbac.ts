@@ -2,6 +2,7 @@ import { Role, User, UserPermissionOverride } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { getSession, SessionUser } from "./auth";
 import { getTenantPrisma } from "./prisma";
+import { handleApiError, UnauthorizedError, ForbiddenError } from "./api-error";
 
 // ==========================================
 // ROLE CAPABILITY MATRIX
@@ -199,7 +200,7 @@ export type AuthenticatedRouteHandler = (
  * 3. Automatic tenant-scoped Prisma injection
  * 4. Role & permission validation
  * 5. Resource ownership verification (e.g. SALES_PERSON assignedTo check)
- * 6. Automatic response pricing sanitization
+ * 6. Centralized API Error Handling
  */
 export function withAuthAndRbac(
   handler: AuthenticatedRouteHandler,
@@ -213,29 +214,18 @@ export function withAuthAndRbac(
       const session = await getSession();
 
       if (!session || !session.user) {
-        return NextResponse.json(
-          { error: "Unauthorized: Active session required." },
-          { status: 401 }
-        );
+        throw new UnauthorizedError("Active session required.");
       }
 
       const { user } = session;
 
       if (user.status !== "ACTIVE") {
-        return NextResponse.json(
-          { error: "Forbidden: User account is disabled." },
-          { status: 403 }
-        );
+        throw new ForbiddenError("User account is disabled.");
       }
 
       // Check role allowlist if defined
       if (options.allowedRoles && !options.allowedRoles.includes(user.role)) {
-        return NextResponse.json(
-          {
-            error: `Forbidden: Role '${user.role}' lacks permission for this action.`,
-          },
-          { status: 403 }
-        );
+        throw new ForbiddenError(`Role '${user.role}' lacks permission for this action.`);
       }
 
       // Check permission key if defined
@@ -243,25 +233,14 @@ export function withAuthAndRbac(
         options.requiredPermission &&
         !hasPermission(user, options.requiredPermission)
       ) {
-        return NextResponse.json(
-          {
-            error: `Forbidden: Required permission '${options.requiredPermission}' not granted.`,
-          },
-          { status: 403 }
-        );
+        throw new ForbiddenError(`Required permission '${options.requiredPermission}' not granted.`);
       }
 
       // Check resource ownership if defined
       if (options.checkResourceOwnership) {
         const isOwner = await options.checkResourceOwnership(user, req);
         if (!isOwner) {
-          return NextResponse.json(
-            {
-              error:
-                "Forbidden: Resource is not assigned to your account or outside your team scope.",
-            },
-            { status: 403 }
-          );
+          throw new ForbiddenError("Resource is not assigned to your account or outside your team scope.");
         }
       }
 
@@ -276,11 +255,8 @@ export function withAuthAndRbac(
 
       return response;
     } catch (error: any) {
-      console.error("[RBAC Guard Error]:", error);
-      return NextResponse.json(
-        { error: error.message || "Internal Server Error" },
-        { status: 500 }
-      );
+      return handleApiError(error);
     }
   };
 }
+
