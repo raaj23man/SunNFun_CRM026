@@ -3,10 +3,11 @@ import { withAuthAndRbac } from "@/lib/rbac";
 import { generateQuotePdfBuffer } from "@/lib/pdf-generator";
 import { ShareQuoteData, ShareToggles } from "@/lib/share-formatter";
 import { BadRequestError, NotFoundError } from "@/lib/api-error";
+import { enqueuePdfGeneration } from "@/lib/queue";
 
 /**
  * POST /api/quotes/:id/generate-pdf
- * Server-side Puppeteer PDF generator returning an A4 PDF stream.
+ * Server-side Puppeteer PDF generator supporting both stream download and BullMQ async queuing.
  */
 export const POST = withAuthAndRbac(
   async (req, { user, scopedPrisma, params }) => {
@@ -17,8 +18,24 @@ export const POST = withAuthAndRbac(
     }
 
     const body = await req.json().catch(() => ({}));
+    const isAsync = req.nextUrl.searchParams.get("async") === "true" || body.async === true;
     const toggles: ShareToggles = body.toggles || {};
     const isBranded = body.is_branded !== false;
+
+    if (isAsync) {
+      const queueRes = await enqueuePdfGeneration({
+        type: "QUOTE_PROPOSAL",
+        entity_id: quoteId,
+        organization_id: user.organization_id,
+        recipient_email: body.recipient_email,
+        options: { toggles, is_branded: isBranded },
+      });
+      return NextResponse.json({
+        success: true,
+        message: "Quote PDF generation dispatched to BullMQ queue.",
+        ...queueRes,
+      });
+    }
 
     const quote = await scopedPrisma.quote.findUnique({
       where: { id: quoteId },

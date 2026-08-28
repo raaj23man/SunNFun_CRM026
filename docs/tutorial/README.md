@@ -28,7 +28,8 @@ This tutorial is specially crafted for **semi-technical vibe coders**, founders,
 | **[15. Phase 2 — Proforma Invoices, Paddle Webhooks & Profit Reports](./15-phase2-proforma-invoices-paddle-webhooks-and-reports.md)** | Proforma Invoices, Paddle payment links, Idempotent webhook replay handler, Profit report with pending-booking warning banner. | Master revenue operations & analytics |
 | **[16. Phase 3 — Integrations, Omnichannel Leads Webhook & Notify Engine](./16-phase3-integrations-leads-webhook-and-notify-engine.md)** | IntegrationConnection API-key auth, Rate limiting, Leads webhook, Notify trigger event dispatch, WhatsApp status listener. | Master external integrations & notification automation |
 | **[17. Phase 3 — AI Email Parsing, Extraction & Confidence Branching](./17-phase3-ai-email-parsing-and-confidence-branching.md)** | Claude schema prompt extraction, High vs Low confidence branching, Trip creation blocker & raw email body preservation. | Master AI email ingestion & triage |
-| *[18. Phase 3 — Background Jobs, Sentry Monitoring & Production Hardening (Upcoming)]* | Will cover Upstash Redis background job queues, Sentry error monitoring & System Status page. | Automatically added in Part 8 |
+| **[18. Phase 3 — Background Jobs, BullMQ/Redis Queues & Scheduled Crons](./18-phase3-background-jobs-bullmq-and-scheduled-crons.md)** | BullMQ async PDF queues, Bulk notification workers, 01:00 Kathmandu overdue scans & 1-year trip archival. | Master background workers & asynchronous processing |
+| *[19. Phase 4 — Sentry Monitoring, Audit Logs & System Status (Upcoming)]* | Will cover Sentry error monitoring, Part 8 AuditLog visualizer & System Status health checks. | Automatically added in Part 8 |
 
 ---
 
