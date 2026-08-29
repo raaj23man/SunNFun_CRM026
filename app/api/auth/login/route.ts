@@ -7,6 +7,7 @@ import {
   setSessionCookie,
   sign2FATempToken,
   SessionUser,
+  SESSION_COOKIE_NAME,
 } from "@/lib/auth";
 
 const loginSchema = z.object({
@@ -51,6 +52,7 @@ export async function POST(req: NextRequest) {
       // Demo fallback credentials for local offline browser testing
       const DEMO_USERS: Record<string, { role: any; first_name: string; last_name: string; org_name: string }> = {
         "superadmin@sunnfun.test": { role: "SUPER_ADMIN", first_name: "Super", last_name: "Admin", org_name: "SunNFun Holidays" },
+        "admin@sunnfunholidays.com": { role: "SUPER_ADMIN", first_name: "Super", last_name: "Admin", org_name: "SunNFun Holidays" },
         "saleshead@sunnfun.test": { role: "SALES_HEAD", first_name: "Sales", last_name: "Head", org_name: "SunNFun Holidays" },
         "salesperson@sunnfun.test": { role: "SALES_PERSON", first_name: "Sales", last_name: "Agent", org_name: "SunNFun Holidays" },
         "operations@sunnfun.test": { role: "OPERATIONS", first_name: "Operations", last_name: "Manager", org_name: "SunNFun Holidays" },
@@ -71,13 +73,24 @@ export async function POST(req: NextRequest) {
           two_factor_enabled: false,
         };
 
-        await setSessionCookie(sessionUser);
+        const token = await setSessionCookie(sessionUser);
 
-        return NextResponse.json({
+        const response = NextResponse.json({
           success: true,
           user: sessionUser,
+          token,
           organization: { id: "org_sunnfun_demo_001", company_name: demoUser.org_name },
         });
+
+        response.cookies.set(SESSION_COOKIE_NAME, token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60,
+        });
+
+        return response;
       }
 
       return NextResponse.json(
@@ -147,13 +160,24 @@ export async function POST(req: NextRequest) {
       two_factor_enabled: user.two_factor_enabled,
     };
 
-    await setSessionCookie(sessionUser);
+    const token = await setSessionCookie(sessionUser);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: sessionUser,
+      token,
       organization: user.organization,
     });
+
+    response.cookies.set(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
+    });
+
+    return response;
   } catch (error: any) {
     console.error("[Login Route Error]:", error);
     return NextResponse.json(

@@ -1,6 +1,6 @@
 import { Role, User, UserPermissionOverride } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { getSession, SessionUser } from "./auth";
+import { getSession, SessionUser, SESSION_COOKIE_NAME, verifySessionJWT } from "./auth";
 import { getTenantPrisma } from "./prisma";
 import { handleApiError, UnauthorizedError, ForbiddenError } from "./api-error";
 
@@ -211,7 +211,16 @@ export function withAuthAndRbac(
     routeProps?: { params?: Record<string, string | string[]> }
   ): Promise<NextResponse> => {
     try {
-      const session = await getSession();
+      let session = await getSession();
+
+      if (!session || !session.user) {
+        const token =
+          req.cookies.get(SESSION_COOKIE_NAME)?.value ||
+          req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+        if (token) {
+          session = await verifySessionJWT(token);
+        }
+      }
 
       if (!session || !session.user) {
         throw new UnauthorizedError("Active session required.");

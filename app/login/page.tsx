@@ -92,11 +92,16 @@ export default function LoginPage() {
         return;
       }
 
+      if (data.token) {
+        document.cookie = `sunnfun_crm_session=${data.token}; path=/; max-age=604800; SameSite=Lax`;
+        localStorage.setItem("sunnfun_crm_token", data.token);
+      }
+
       setSuccessMessage(`Welcome back, ${data.user.first_name}!`);
       setTimeout(() => {
-        router.push("/");
+        router.push("/dashboard");
         router.refresh();
-      }, 800);
+      }, 500);
     } catch (err: any) {
       setErrorMessage(err.message || "An unexpected error occurred.");
     } finally {

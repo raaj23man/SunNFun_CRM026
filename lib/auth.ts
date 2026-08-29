@@ -19,7 +19,7 @@ import { Role, UserStatus } from "@prisma/client";
 
 const JWT_SECRET_STRING =
   process.env.NEXTAUTH_SECRET ||
-  "development-secret-key-replace-in-production-1234567890";
+  "development-secret-key-replace-in-production-12345";
 const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_STRING);
 
 export const SESSION_COOKIE_NAME = "sunnfun_crm_session";

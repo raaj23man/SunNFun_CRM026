@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getSession, SESSION_COOKIE_NAME, verifySessionJWT } from "@/lib/auth";
 import { resolveUserPermissions } from "@/lib/rbac";
 import { getTenantPrisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getSession();
+    let session = await getSession();
+
+    if (!session || !session.user) {
+      const token =
+        req.cookies.get(SESSION_COOKIE_NAME)?.value ||
+        req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+      if (token) {
+        session = await verifySessionJWT(token);
+      }
+    }
 
     if (!session || !session.user) {
       return NextResponse.json(
