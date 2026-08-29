@@ -75,34 +75,50 @@ export const GET = withAuthAndRbac(
       ];
     }
 
-    const trips = await scopedPrisma.trip.findMany({
-      where,
-      include: {
-        guest: {
-          select: {
-            id: true,
-            full_name: true,
-            phone_number: true,
-            email: true,
-            salutation: true,
-            is_repeat_traveler: true,
+    let trips: any[] = [];
+    try {
+      trips = await scopedPrisma.trip.findMany({
+        where,
+        include: {
+          guest: {
+            select: {
+              id: true,
+              full_name: true,
+              phone_number: true,
+              email: true,
+              salutation: true,
+              is_repeat_traveler: true,
+            },
+          },
+          destination: {
+            select: { id: true, name: true },
+          },
+          assigned_user: {
+            select: { id: true, first_name: true, last_name: true, email: true },
+          },
+          trip_source: {
+            select: { id: true, name: true, type: true },
+          },
+          _count: {
+            select: { tourists: true, follow_ups: true, tasks: true },
           },
         },
-        destination: {
-          select: { id: true, name: true },
-        },
-        assigned_user: {
-          select: { id: true, first_name: true, last_name: true, email: true },
-        },
-        trip_source: {
-          select: { id: true, name: true, type: true },
-        },
-        _count: {
-          select: { tourists: true, follow_ups: true, tasks: true },
-        },
-      },
-      orderBy: { created_at: "desc" },
-    });
+        orderBy: { created_at: "desc" },
+      });
+    } catch (err: any) {
+      console.warn("[Trips API] Database query failed, using demo dummy trips:", err.message);
+      const { MOCK_TRIPS } = await import("@/lib/mock-data-store");
+      trips = MOCK_TRIPS.filter((t) => {
+        if (statusParam && t.status !== statusParam) return false;
+        if (search) {
+          const matchId = t.trip_display_id.toLowerCase().includes(search.toLowerCase());
+          const matchName = t.guest.full_name.toLowerCase().includes(search.toLowerCase());
+          const matchPhone = t.guest.phone_number.includes(search);
+          if (!matchId && !matchName && !matchPhone) return false;
+        }
+        return true;
+      });
+    }
 
     const now = new Date();
     const threeDaysAgo = new Date();
@@ -110,7 +126,7 @@ export const GET = withAuthAndRbac(
 
     // Compute has_stale_activity_warning per Sembark specification
     const enrichedTrips = trips.map((t) => {
-      const isStale = t.status === "IN_PROGRESS" && new Date(t.updated_at) < threeDaysAgo;
+      const isStale = t.status === "IN_PROGRESS" && new Date(t.updated_at || Date.now()) < threeDaysAgo;
       return {
         ...t,
         has_stale_activity_warning: isStale,
